@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kha₹cha — Expense Tracker</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%234361EE'/><text y='44' x='8' font-size='38' font-family='system-ui' font-weight='900' fill='white'>₹</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Outfit:wght@300;400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F0F2F8;--card:#fff;--border:#E4E8F0;--border2:#D0D6E8;
+  --t1:#1A1D2E;--t2:#5A6282;--t3:#9BA3BF;
+  --accent:#4361EE;--accent2:#3A0CA3;
+  --green:#2DC653;--green-bg:#EBF9EF;
+  --red:#F72585;--red-bg:#FEF0F7;
+  --orange:#FB8500;--teal:#4CC9F0;--purple:#7209B7;--yellow:#F9A825;
+  --sh:0 2px 12px rgba(67,97,238,0.08);
+  --sh2:0 8px 32px rgba(67,97,238,0.14);
+  --r:16px;--rs:10px;
+  --font:'Plus Jakarta Sans',sans-serif;
+  --font2:'Outfit',sans-serif;
+  --sb:220px;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t1)}
+body{display:flex;overflow:hidden}
+
+/* ══ SCROLLBAR ══ */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* ══ SIDEBAR ══ */
+.sb{width:var(--sb);flex-shrink:0;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .25s}
+.sb-logo{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sb-logo-ic{width:34px;height:34px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;color:#fff;flex-shrink:0}
+.sb-logo-txt{font-size:1.05rem;font-weight:800;letter-spacing:-.02em}
+.sb-logo-txt span{color:var(--accent)}
+.sb-sect{padding:14px 12px 3px;font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);white-space:nowrap;overflow:hidden}
+.nav{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--rs);margin:2px 8px;font-size:.8rem;font-weight:600;color:var(--t2);cursor:pointer;transition:all .15s;white-space:nowrap}
+.nav:hover{background:var(--bg)}
+.nav.on{background:rgba(67,97,238,.09);color:var(--accent)}
+.nav-ic{width:28px;height:28px;border-radius:7px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:.82rem;flex-shrink:0;transition:all .15s}
+.nav.on .nav-ic{background:var(--accent);filter:brightness(10)}
+.sb-foot{margin-top:auto;padding:14px;border-top:1px solid var(--border)}
+.import-btn{width:100%;padding:9px;border-radius:var(--rs);background:rgba(67,97,238,.07);border:1.5px dashed var(--accent);color:var(--accent);font-family:var(--font);font-size:.72rem;font-weight:700;cursor:pointer;transition:all .15s}
+.import-btn:hover{background:var(--accent);color:#fff}
+
+/* ══ MAIN ══ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:58px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0}
+.topbar-l{display:flex;flex-direction:column}
+.topbar-greet{font-size:.95rem;font-weight:800}
+.topbar-sub{font-size:.67rem;color:var(--t3);font-weight:500}
+.topbar-r{display:flex;align-items:center;gap:8px}
+.tb-badge{display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--bg);border-radius:20px;font-size:.68rem;color:var(--t2);font-weight:600;border:1px solid var(--border)}
+.tb-btn{padding:6px 14px;border-radius:20px;border:none;background:var(--accent);color:#fff;font-family:var(--font);font-size:.7rem;font-weight:700;cursor:pointer}
+.tb-btn:hover{background:var(--accent2)}
+
+/* ══ CONTENT ══ */
+.content{flex:1;overflow-y:auto;padding:20px 24px}
+.page{display:none}
+.page.on{display:block}
+
+/* ══ CARDS ══ */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh)}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:700}
+.card-ic{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0}
+
+/* ══ GRID ══ */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.g65{display:grid;grid-template-columns:1.8fr 1fr;gap:14px;margin-bottom:18px}
+.g3{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:14px;margin-bottom:18px}
+
+/* ══ STAT CARDS ══ */
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh);transition:transform .2s}
+.stat:hover{transform:translateY(-2px)}
+.stat-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;margin-bottom:10px}
+.stat-lbl{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:5px}
+.stat-val{font-size:1.4rem;font-weight:800;line-height:1;font-family:var(--font2)}
+.stat-val .cur{font-size:.8rem;font-weight:600;color:var(--t2)}
+.stat-badge{display:inline-flex;align-items:center;gap:3px;margin-top:7px;padding:3px 7px;border-radius:20px;font-size:.62rem;font-weight:700}
+.b-g{background:var(--green-bg);color:var(--green)}
+.b-r{background:var(--red-bg);color:var(--red)}
+.b-n{background:var(--bg);color:var(--t3)}
+
+/* ══ CHART WRAPS ══ */
+.ch{position:relative}
+.ch-260{height:260px}
+.ch-220{height:220px}
+.ch-200{height:200px}
+.ch-180{height:180px}
+
+/* ══ TABLE ══ */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.77rem}
+thead th{text-align:left;padding:8px 10px;font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border-bottom:1.5px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+thead th:hover{color:var(--t1)}
+tbody tr{transition:background .1s}
+tbody tr:hover{background:var(--bg)}
+tbody td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--t2)}
+tbody td.n{font-family:var(--font2);text-align:right;color:var(--t1);font-weight:700}
+.th-asc::after{content:" ↑";color:var(--accent)}
+.th-desc::after{content:" ↓";color:var(--accent)}
+.cat-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:700}
+.online-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:.6rem;font-weight:700}
+.ob-on{background:#EEF1FD;color:var(--accent)}
+.ob-off{background:var(--bg);color:var(--t3)}
+
+/* ══ FILTERS ══ */
+.fbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 18px;background:var(--card);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);margin-bottom:18px}
+.flbl{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);flex-shrink:0}
+.fsel-w{position:relative}
+.fsel-w::after{content:"▾";position:absolute;right:9px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:.65rem;pointer-events:none}
+select.fsel,input.fsel{padding:6px 26px 6px 10px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);color:var(--t1);font-family:var(--font);font-size:.72rem;font-weight:600;cursor:pointer;outline:none;-webkit-appearance:none;transition:border-color .15s}
+input.fsel{padding-right:10px}
+select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
+.fsep{width:1px;height:18px;background:var(--border);flex-shrink:0}
+.abtn{padding:7px 16px;border-radius:20px;border:none;background:var(--accent);color:#fff;font-family:var(--font);font-size:.72rem;font-weight:700;cursor:pointer;transition:all .15s;margin-left:auto}
+.abtn:hover{background:var(--accent2)}
+.abtn.sm{padding:5px 12px;font-size:.68rem;margin-left:0}
+
+/* ══ ENTRY FORM ══ */
+.entry-grid{display:grid;grid-template-columns:1fr 340px;gap:18px}
+.form-f{margin-bottom:13px}
+.form-f label{display:block;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:5px}
+.fi{width:100%;padding:9px 13px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--bg);color:var(--t1);font-family:var(--font);font-size:.83rem;font-weight:500;outline:none;transition:border-color .15s;-webkit-appearance:none}
+.fi:focus{border-color:var(--accent)}
+.fi::placeholder{color:var(--t3)}
+.amt-row{display:grid;grid-template-columns:1fr 72px 86px;gap:7px}
+.amt-w{position:relative}
+.amt-w::before{content:"₹";position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--t2);pointer-events:none;font-weight:600}
+.amt-w .fi{padding-left:22px;font-weight:700;font-size:.95rem}
+.unit-hint{font-size:.63rem;color:var(--green);margin-top:3px;min-height:13px}
+.chip-grid{display:flex;flex-wrap:wrap;gap:5px}
+.chip{padding:5px 11px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);color:var(--t2);font-family:var(--font);font-size:.7rem;font-weight:600;cursor:pointer;transition:all .12s}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip.sc{border-color:var(--accent);background:rgba(67,97,238,.09);color:var(--accent)}
+.chip.ss{border-color:var(--green);background:rgba(45,198,83,.08);color:var(--green)}
+.chip.sst{border-color:var(--purple);background:rgba(114,9,183,.08);color:var(--purple)}
+.chip.online-chip{border-color:var(--teal);background:rgba(76,201,240,.12);color:var(--teal)}
+.save-btn{width:100%;padding:12px;border-radius:var(--rs);border:none;background:var(--accent);color:#fff;font-family:var(--font);font-size:.8rem;font-weight:700;cursor:pointer;transition:all .15s;margin-top:3px}
+.save-btn:hover{background:var(--accent2);transform:translateY(-1px)}
+
+/* ══ LOG ══ */
+.log-item{display:grid;grid-template-columns:30px 1fr auto 18px;gap:7px;align-items:center;padding:8px 10px;border-radius:var(--rs);background:var(--bg);margin-bottom:3px;border:1px solid transparent;transition:border-color .12s}
+.log-item:hover{border-color:var(--border)}
+.log-ic{width:30px;height:30px;border-radius:7px;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:.8rem}
+.log-nm{font-size:.75rem;font-weight:700}
+.log-mt{font-size:.58rem;color:var(--t3)}
+.log-amt{font-size:.78rem;font-weight:700;color:var(--red);font-family:var(--font2);text-align:right}
+.del-btn{background:none;border:none;color:var(--t3);cursor:pointer;font-size:.7rem}
+.del-btn:hover{color:var(--red)}
+.log-tot-row{display:flex;justify-content:space-between;padding:9px 10px;border-top:1.5px solid var(--border);margin-top:5px}
+.log-tot-lbl{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3)}
+.log-tot-val{font-size:.95rem;font-weight:800;color:var(--red);font-family:var(--font2)}
+
+/* ══ PROGRESS ══ */
+.prog{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:5px}
+.prog-f{height:100%;border-radius:3px;transition:width .5s ease}
+
+/* ══ STORE ROW ══ */
+.store-row{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)}
+.store-row:last-child{border-bottom:none}
+.store-av{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;color:#fff}
+.store-nm{flex:1;font-size:.78rem;font-weight:600}
+.store-amt{font-size:.78rem;font-weight:700;font-family:var(--font2)}
+
+/* ══ MANAGE ══ */
+.cat-manage-row{border:1px solid var(--border);border-radius:var(--rs);margin-bottom:8px;overflow:hidden}
+.cat-manage-hd{display:flex;align-items:center;gap:8px;padding:9px 13px;background:var(--bg)}
+.cat-manage-ic{cursor:pointer;font-size:1.1rem;transition:transform .15s}
+.cat-manage-ic:hover{transform:scale(1.2)}
+.cat-manage-nm{flex:1;font-size:.83rem;font-weight:700}
+.cat-manage-body{padding:8px 13px 10px;display:flex;flex-wrap:wrap;gap:5px}
+.sub-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:20px;background:var(--bg);border:1px solid var(--border);font-size:.7rem;font-weight:600}
+
+/* ══ ICON PICKER ══ */
+.icon-picker{position:fixed;z-index:2000;background:var(--card);border:1.5px solid var(--border2);border-radius:var(--r);padding:14px;box-shadow:var(--sh2);width:280px}
+.icon-picker-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:200px;overflow-y:auto;margin-top:8px}
+.ip-ic{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:1rem;border-radius:6px;cursor:pointer;transition:background .1s}
+.ip-ic:hover{background:var(--bg)}
+.ip-ic.sel{background:rgba(67,97,238,.12);outline:2px solid var(--accent)}
+.ip-search{width:100%;padding:6px 10px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--bg);font-family:var(--font);font-size:.75rem;outline:none}
+.ip-search:focus{border-color:var(--accent)}
+
+/* ══ REPORT SUMMARY ══ */
+.r-sum{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px}
+.rsm{background:var(--card);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;text-align:center;box-shadow:var(--sh)}
+.rsm-lbl{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:5px}
+.rsm-val{font-size:1.05rem;font-weight:800;font-family:var(--font2)}
+
+/* ══ ONLINE/OFFLINE SUMMARY ══ */
+.oo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.oo-card{border-radius:var(--rs);padding:13px 16px;border:1.5px solid transparent}
+.oo-online{background:rgba(67,97,238,.06);border-color:rgba(67,97,238,.2)}
+.oo-offline{background:rgba(45,198,83,.06);border-color:rgba(45,198,83,.2)}
+.oo-other{background:rgba(251,133,0,.06);border-color:rgba(251,133,0,.2)}
+.oo-lbl{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+.oo-val{font-size:1.1rem;font-weight:800;font-family:var(--font2)}
+.oo-pct{font-size:.68rem;font-weight:600;margin-top:3px;opacity:.7}
+
+/* ══ SUBCAT TABLE ══ */
+.subcat-section{margin-bottom:16px}
+.subcat-section-title{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);padding:8px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px}
+
+/* ══ PIVOT ══ */
+.pivot-hdr{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+
+/* ══ LOOKUP ══ */
+.ls-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.ls-item{text-align:center;padding:10px;background:var(--bg);border-radius:var(--rs);border:1px solid var(--border)}
+.ls-val{font-size:1rem;font-weight:800;color:var(--accent);font-family:var(--font2)}
+.ls-lbl{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-top:3px}
+
+/* ══ GIST ══ */
+.gist-status{display:flex;align-items:center;gap:6px;font-size:.75rem;font-weight:600}
+.gist-dot{width:8px;height:8px;border-radius:50%;background:var(--t3)}
+.gist-dot.ok{background:var(--green)}
+.gist-dot.err{background:var(--red)}
+.gist-dot.syncing{background:var(--yellow);animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:20px;right:20px;z-index:9999;padding:11px 18px;border-radius:var(--rs);font-size:.78rem;font-weight:700;color:#fff;background:var(--t1);box-shadow:var(--sh2);transform:translateY(70px);opacity:0;transition:all .28s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.tg{background:var(--green)}
+.toast.tr{background:var(--red)}
+
+/* ══ OVERLAY / MODAL ══ */
+.overlay{position:fixed;inset:0;background:rgba(26,29,46,.5);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--card);border-radius:var(--r);padding:26px;width:420px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-title{font-size:.95rem;font-weight:800;margin-bottom:14px}
+.modal-msg{font-size:.8rem;color:var(--t2);margin-bottom:18px}
+.modal-acts{display:flex;justify-content:flex-end;gap:7px}
+.mbtn{padding:8px 18px;border-radius:var(--rs);border:1.5px solid var(--border);background:transparent;color:var(--t2);font-family:var(--font);font-size:.76rem;font-weight:700;cursor:pointer}
+.mbtn.danger{background:var(--red);border-color:var(--red);color:#fff}
+
+/* ══ SHOPPING LIST / PANTRY ══ */
+.shop-item{display:grid;grid-template-columns:28px 1fr auto auto auto;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);transition:background .1s}
+.shop-item:hover{background:var(--bg)}
+.shop-item.done{opacity:.5}
+.shop-item.done .si-name{text-decoration:line-through;color:var(--t3)}
+.si-cb{width:18px;height:18px;cursor:pointer;accent-color:var(--accent)}
+.si-name{font-size:.82rem;font-weight:600}
+.si-meta{font-size:.62rem;color:var(--t3)}
+.si-badge{font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:20px}
+.si-actions{display:flex;gap:5px}
+.si-btn{padding:4px 9px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);font-size:.65rem;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .12s}
+.si-btn.green{border-color:var(--green);color:var(--green);background:var(--green-bg)}
+.si-btn.green:hover{background:var(--green);color:#fff}
+.si-btn.red:hover{border-color:var(--red);color:var(--red)}
+.pantry-item{display:grid;grid-template-columns:36px 1fr auto auto;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);transition:background .1s}
+.pantry-item:hover{background:var(--bg)}
+.pt-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0}
+.pt-name{font-size:.82rem;font-weight:600}
+.pt-meta{font-size:.62rem;color:var(--t3)}
+.pt-qty-edit{display:flex;align-items:center;gap:5px}
+.qty-btn{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg);font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;transition:all .12s}
+.qty-btn:hover{border-color:var(--accent);color:var(--accent)}
+.qty-val{font-size:.8rem;font-weight:700;font-family:var(--font2);min-width:40px;text-align:center}
+.low-stock{color:var(--orange);font-weight:700}
+.out-stock{color:var(--red);font-weight:700}
+/* ══ ICON URL PICKER ══ */
+.icon-picker-tabs{display:flex;gap:6px;margin-bottom:10px}
+.ip-tab{padding:5px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);font-size:.7rem;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .12s}
+.ip-tab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ip-url-row{display:flex;gap:6px;margin-bottom:8px}
+.ip-url-preview{width:36px;height:36px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:1.2rem;overflow:hidden;flex-shrink:0}
+.ip-url-preview img{width:100%;height:100%;object-fit:contain}
+
+/* ══ PRICE ALERT ══ */
+.price-alert{display:inline-flex;align-items:center;gap:3px;font-size:.65rem;font-weight:700;padding:2px 6px;border-radius:20px}
+.pa-high{background:#FFF3E0;color:#E65100}
+.pa-low{background:#E8F5E9;color:#2E7D32}
+
+/* ══ MOBILE ══ */
+@media(max-width:900px){
+  :root{--sb:56px}
+  .sb-logo-txt,.sb-sect,.nav span:not(.nav-ic),.sb-foot .import-btn span{display:none}
+  .sb-foot .import-btn{padding:8px;font-size:1rem}
+  .nav{justify-content:center;padding:10px}
+  .g4{grid-template-columns:1fr 1fr}
+  .g3,.g65,.g2{grid-template-columns:1fr}
+  .entry-grid{grid-template-columns:1fr}
+  .r-sum{grid-template-columns:repeat(3,1fr)}
+  .oo-grid{grid-template-columns:1fr}
+  .ls-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+  .g4{grid-template-columns:1fr}
+  .topbar-sub{display:none}
+  .r-sum{grid-template-columns:repeat(2,1fr)}
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeUp .22s ease both}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sb">
+  <div class="sb-logo">
+    <div class="sb-logo-ic">K₹</div>
+    <div class="sb-logo-txt">Kha<span>₹cha</span></div>
+  </div>
+  <div class="sb-sect">General</div>
+  <div class="nav on" onclick="go('dashboard',this)"><div class="nav-ic">📊</div><span>Dashboard</span></div>
+  <div class="nav" onclick="go('expenses',this)"><div class="nav-ic">📋</div><span>All Expenses</span></div>
+  <div class="nav" onclick="go('entry',this)"><div class="nav-ic">➕</div><span>Add Entry</span></div>
+  <div class="sb-sect">Analyse</div>
+  <div class="nav" onclick="go('report',this)"><div class="nav-ic">📅</div><span>Reports</span></div>
+  <div class="nav" onclick="go('pivot',this)"><div class="nav-ic">⊞</div><span>Pivot</span></div>
+  <div class="nav" onclick="go('txns',this)"><div class="nav-ic">🗂️</div><span>Transactions</span></div>
+  <div class="nav" onclick="go('lookup',this)"><div class="nav-ic">🔍</div><span>Item Lookup</span></div>
+  <div class="sb-sect">Settings</div>
+  <div class="nav" onclick="go('manage',this)"><div class="nav-ic">⚙️</div><span>Manage</span></div>
+  <div class="nav" onclick="go('gist',this)"><div class="nav-ic">☁️</div><span>Sync / Gist</span></div>
+  <div class="sb-sect">Household</div>
+  <div class="nav" onclick="go('shopping',this)"><div class="nav-ic">🛍️</div><span>Shopping List</span></div>
+  <div class="nav" onclick="go('pantry',this)"><div class="nav-ic">🏺</div><span>Pantry</span></div>
+  <div class="sb-foot">
+    <button class="import-btn" onclick="document.getElementById('imp-file').click()"><span>↑ Import</span></button>
+    <input type="file" id="imp-file" accept=".json,.csv" style="display:none" onchange="handleImport(this)">
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-l">
+      <div class="topbar-greet">Hi, Amal 👋</div>
+      <div class="topbar-sub">Kha₹cha — Track every rupee</div>
+    </div>
+    <div class="topbar-r">
+      <div class="tb-badge">🕐 <span id="clock"></span></div>
+      <div class="tb-badge" id="gist-topstatus" style="cursor:pointer" onclick="go('gist',document.querySelector('.nav:nth-child(11)'))">
+        <span class="gist-dot" id="gist-dot-top"></span><span id="gist-top-lbl">Not synced</span>
+      </div>
+      <button class="tb-btn" onclick="showExport()">↓ Export</button>
+    </div>
+  </div>
+
+  <div class="content" id="content">
+
+    <!-- ══════════ DASHBOARD ══════════ -->
+    <div class="page on" id="page-dashboard">
+      <div class="g4" id="dash-stats"></div>
+      <div class="g65">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title"><div class="card-ic" style="background:#EEF1FD">📈</div>Monthly Expenses</div>
+          </div>
+          <div class="ch ch-220"><canvas id="c-monthly"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title"><div class="card-ic" style="background:#F3E8FF">🎯</div>By Category</div>
+            <button class="abtn sm" onclick="go('report',document.querySelectorAll('.nav')[7])">Report →</button>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center">
+            <div class="ch" style="height:150px;width:150px;flex-shrink:0"><canvas id="c-donut"></canvas></div>
+            <div id="cat-legend" style="flex:1;min-width:0"></div>
+          </div>
+        </div>
+      </div>
+      <div class="g3">
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title"><div class="card-ic" style="background:#EBF9EF">🛍️</div>Online vs Offline</div>
+          </div>
+          <div class="ch ch-180"><canvas id="c-oo"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><div class="card-ic" style="background:#FFF8E1">🏪</div>Top Stores</div></div>
+          <div id="store-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title"><div class="card-ic" style="background:#FEF0F7">📋</div>Recent</div></div>
+          <div id="recent-mini"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ ALL EXPENSES ══════════ -->
+    <div class="page" id="page-expenses">
+      <div class="fbar">
+        <span class="flbl">Filter</span>
+        <div class="fsel-w"><select class="fsel" id="fe-month"><option value="">All Months</option></select></div>
+        <div class="fsel-w"><select class="fsel" id="fe-cat"><option value="">All Categories</option></select></div>
+        <div class="fsel-w"><select class="fsel" id="fe-sub"><option value="">All Sub-cats</option></select></div>
+        <div class="fsel-w"><select class="fsel" id="fe-store"><option value="">All Stores</option></select></div>
+        <div class="fsel-w"><select class="fsel" id="fe-mode"><option value="">Online+Offline</option><option value="online">Online only</option><option value="offline">Offline only</option></select></div>
+        <input class="fsel" id="fe-q" placeholder="Search…" oninput="renderExpTable()">
+        <button class="abtn" onclick="renderExpTable()">Apply</button>
+      </div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">All Expenses</div>
+          <div id="exp-count" style="font-size:.7rem;color:var(--t3);font-weight:600"></div>
+        </div>
+        <div class="tbl-wrap" id="exp-table"></div>
+      </div>
+    </div>
+
+    <!-- ══════════ ADD ENTRY ══════════ -->
+    <div class="page" id="page-entry">
+      <div class="entry-grid">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">New Expense</div></div>
+          <div class="form-f">
+            <label>Date</label>
+            <input type="date" class="fi" id="e-date">
+          </div>
+          <div class="form-f">
+            <label>Item</label>
+            <input type="text" class="fi" id="e-item" placeholder="e.g. Milk, Petrol, Medicines…" autocomplete="off" oninput="showSuggest()">
+            <div id="e-suggest" style="display:none;background:var(--card);border:1px solid var(--border2);border-radius:var(--rs);margin-top:3px;overflow:hidden;box-shadow:var(--sh2);"></div>
+          </div>
+          <div class="form-f">
+            <label>Amount &amp; Quantity</label>
+            <div class="amt-row">
+              <div class="amt-w"><input type="number" class="fi" id="e-amt" placeholder="0" oninput="calcUnit()"></div>
+              <input type="number" class="fi" id="e-qty" placeholder="Qty" step="any" oninput="calcUnit()">
+              <select class="fi" id="e-unit" onchange="calcUnit()">
+                <option value="">Unit</option>
+                <option>kgs</option><option>gms</option><option>ltr</option><option>ml</option>
+                <option>nos</option><option>pkt</option><option>dozen</option><option>bunch</option>
+              </select>
+            </div>
+            <div class="unit-hint" id="unit-hint"></div>
+          </div>
+          <div class="form-f">
+            <label>Category</label>
+            <div class="chip-grid" id="e-cats"></div>
+          </div>
+          <div class="form-f">
+            <label>Sub-category</label>
+            <div class="chip-grid" id="e-subs"><span style="font-size:.7rem;color:var(--t3);font-style:italic">Select a category first</span></div>
+          </div>
+          <div class="form-f">
+            <label>Store</label>
+            <div class="chip-grid" id="e-stores"></div>
+          </div>
+          <div class="form-f">
+            <label>Mode <span id="online-indicator" style="font-size:.65rem;color:var(--teal);font-weight:700;margin-left:6px"></span></label>
+            <div style="display:flex;gap:8px">
+              <button class="chip" id="mode-offline" onclick="setMode('offline')">🏪 Offline</button>
+              <button class="chip" id="mode-online" onclick="setMode('online')">📦 Online</button>
+            </div>
+          </div>
+          <div class="form-f">
+            <label>Note</label>
+            <textarea class="fi" id="e-note" style="resize:vertical;min-height:50px" placeholder="Optional note…"></textarea>
+          </div>
+          <button class="save-btn" onclick="saveEntry()">+ Save Entry</button>
+          <button class="save-btn" style="background:var(--green);margin-top:6px" onclick="saveEntryAndAddToPantry()">+ Save Entry & Add to Pantry</button>
+        </div>
+        <div>
+          <div class="card" style="position:sticky;top:0">
+            <div class="card-hd">
+              <div class="card-title">Today's Log</div>
+              <div id="log-date-lbl" style="font-size:.65rem;color:var(--t3);font-weight:600"></div>
+            </div>
+            <div id="log-entries" style="max-height:400px;overflow-y:auto"></div>
+            <div class="log-tot-row">
+              <span class="log-tot-lbl">Total</span>
+              <span class="log-tot-val" id="log-tot">₹0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ REPORT ══════════ -->
+    <div class="page" id="page-report">
+      <div class="fbar">
+        <span class="flbl">Period</span>
+        <div class="fsel-w"><select class="fsel" id="r-type" onchange="toggleRType()">
+          <option value="month">Monthly</option>
+          <option value="range">Date Range</option>
+          <option value="all">All Time</option>
+        </select></div>
+        <div id="r-month-w" class="fsel-w"><select class="fsel" id="r-month"></select></div>
+        <div id="r-range-w" style="display:none;align-items:center;gap:6px" class="df">
+          <input type="date" class="fsel" id="r-from">
+          <span style="color:var(--t3);font-size:.72rem">→</span>
+          <input type="date" class="fsel" id="r-to">
+        </div>
+        <div class="fsel-w"><select class="fsel" id="r-cat"><option value="">All Categories</option></select></div>
+        <button class="abtn" onclick="renderReport()">Generate</button>
+      </div>
+
+      <!-- Summary KPIs -->
+      <div class="r-sum" id="r-sum"></div>
+
+      <!-- Online / Offline / Other -->
+      <div class="oo-grid" id="r-oo"></div>
+
+      <!-- Charts row 1 -->
+      <div class="g2" style="margin-bottom:18px">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Category Breakdown</div></div>
+          <div class="ch ch-220"><canvas id="rc-cat"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Daily Spend</div></div>
+          <div class="ch ch-220"><canvas id="rc-daily"></canvas></div>
+        </div>
+      </div>
+      <!-- Charts row 2 -->
+      <div class="g2" style="margin-bottom:18px">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Sub-category Breakdown</div></div>
+          <div class="ch ch-220"><canvas id="rc-sub"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Store Breakdown</div></div>
+          <div class="ch ch-220"><canvas id="rc-store"></canvas></div>
+        </div>
+      </div>
+      <!-- Per-Category Subcat Tables -->
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-hd"><div class="card-title">Sub-category Detail by Category</div></div>
+        <div id="r-subcat-tables"></div>
+      </div>
+    </div>
+
+    <!-- ══════════ PIVOT ══════════ -->
+    <div class="page" id="page-pivot">
+      <div class="card" style="margin-bottom:14px">
+        <div class="pivot-hdr">
+          <span class="flbl">Group by</span>
+          <button class="chip sc" data-g="category" onclick="setPG(this,'category')">Category</button>
+          <button class="chip" data-g="subcat" onclick="setPG(this,'subcat')">Sub-category</button>
+          <button class="chip" data-g="store" onclick="setPG(this,'store')">Store</button>
+          <button class="chip" data-g="item" onclick="setPG(this,'item')">Item</button>
+          <button class="chip" data-g="date" onclick="setPG(this,'date')">Date</button>
+          <div style="margin-left:auto;display:flex;gap:7px">
+            <div class="fsel-w"><select class="fsel" id="p-month" onchange="renderPivot()"><option value="">All Months</option></select></div>
+            <div class="fsel-w"><select class="fsel" id="p-cat" onchange="renderPivot()"><option value="">All Categories</option></select></div>
+            <div class="fsel-w"><select class="fsel" id="p-mode" onchange="renderPivot()"><option value="">All</option><option value="online">Online</option><option value="offline">Offline</option></select></div>
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="tbl-wrap" id="pivot-wrap"></div></div>
+    </div>
+
+    <!-- ══════════ DETAILED TRANSACTIONS ══════════ -->
+    <div class="page" id="page-txns">
+      <div class="fbar">
+        <span class="flbl">Filter</span>
+        <div class="fsel-w"><select class="fsel" id="tx-month"><option value="">All Months</option></select></div>
+        <div class="fsel-w"><select class="fsel" id="tx-cat"><option value="">All Categories</option></select></div>
+        <div class="fsel-w"><select class="fsel" id="tx-sub"><option value="">All Sub-cats</option></select></div>
+        <div class="fsel-w"><select class="fsel" id="tx-store"><option value="">All Stores</option></select></div>
+        <div class="fsel-w"><select class="fsel" id="tx-mode"><option value="">Online+Offline</option><option value="online">Online</option><option value="offline">Offline</option></select></div>
+        <input class="fsel" id="tx-q" placeholder="Search…" oninput="renderTxns()">
+        <button class="abtn" onclick="renderTxns()">Filter</button>
+      </div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">Detailed Transactions</div>
+          <div id="tx-count" style="font-size:.7rem;color:var(--t3);font-weight:600"></div>
+        </div>
+        <div class="tbl-wrap" id="tx-table"></div>
+      </div>
+    </div>
+
+    <!-- ══════════ ITEM LOOKUP ══════════ -->
+    <div class="page" id="page-lookup">
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-hd"><div class="card-title">Item Lookup</div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:1;min-width:180px"><input type="text" class="fi" id="lk-item" placeholder="e.g. Milk, Fish, Petrol…"></div>
+          <div class="fsel-w"><select class="fsel" id="lk-period">
+            <option value="month">This Month</option>
+            <option value="3m">Last 3 Months</option>
+            <option value="year">2026</option>
+            <option value="all" selected>All Time</option>
+          </select></div>
+          <button class="abtn" onclick="doLookup()">Search</button>
+        </div>
+      </div>
+      <div id="lk-result"></div>
+    </div>
+
+    <!-- ══════════ MANAGE ══════════ -->
+    <div class="page" id="page-manage">
+      <div class="g2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Data</div></div>
+          <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px">
+            <button class="abtn sm" style="background:var(--green)" onclick="exportJSON()">↓ JSON</button>
+            <button class="abtn sm" style="background:var(--teal)" onclick="exportCSV()">↓ CSV</button>
+            <button class="abtn sm" style="background:var(--orange)" onclick="document.getElementById('imp-file').click()">↑ Import</button>
+            <button class="abtn sm" style="background:var(--red)" onclick="confirmClear()">Clear All</button>
+          </div>
+          <div style="padding:10px;background:var(--bg);border-radius:var(--rs);font-size:.73rem;color:var(--t2)">
+            <strong id="data-cnt"></strong> entries &nbsp;·&nbsp; Last: <span id="data-last"></span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Add Category</div></div>
+          <div style="display:flex;gap:7px;align-items:flex-end">
+            <input type="text" class="fi" id="nc-icon" placeholder="🛒" style="width:44px;text-align:center">
+            <input type="text" class="fi" id="nc-name" placeholder="Category name" style="flex:1">
+            <button class="abtn sm" onclick="addCat()">Add</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-hd">
+          <div class="card-title">Categories &amp; Sub-categories</div>
+          <span style="font-size:.68rem;color:var(--t3)">Click icon to change</span>
+        </div>
+        <div id="manage-cats"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Stores</div></div>
+        <div id="manage-stores" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px"></div>
+        <div style="display:flex;gap:7px">
+          <input type="text" class="fi" id="ns-name" placeholder="Add store…" style="max-width:220px">
+          <button class="abtn sm" onclick="addStore()">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ GIST SYNC ══════════ -->
+    <div class="page" id="page-gist">
+      <div class="card" style="max-width:560px;margin-bottom:14px">
+        <div class="card-hd"><div class="card-title">☁️ GitHub Gist Sync</div></div>
+        <p style="font-size:.8rem;color:var(--t2);margin-bottom:16px;line-height:1.6">Store all your data — entries, categories, stores, and icons — in a private GitHub Gist. Pull to load from cloud, push to save your latest data.</p>
+
+        <div class="form-f">
+          <label>GitHub Personal Access Token</label>
+          <input type="password" class="fi" id="g-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+          <div style="font-size:.62rem;color:var(--t3);margin-top:4px">Needs <code>gist</code> scope. Stored locally only, never sent anywhere except GitHub.</div>
+        </div>
+        <div class="form-f">
+          <label>Gist ID <span style="color:var(--t3);font-weight:500">(leave blank to create new on first push)</span></label>
+          <input type="text" class="fi" id="g-id" placeholder="e.g. abc123def456…">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          <button class="abtn sm" style="background:var(--green)" onclick="gistPush()">⬆ Push to Gist</button>
+          <button class="abtn sm" style="background:var(--teal)" onclick="gistPull()">⬇ Pull from Gist</button>
+          <button class="abtn sm" style="background:var(--bg);color:var(--t2);border:1.5px solid var(--border)" onclick="saveGistConfig()">Save Config</button>
+        </div>
+        <div id="gist-log" style="padding:10px;background:var(--bg);border-radius:var(--rs);font-size:.72rem;color:var(--t2);min-height:40px;font-family:monospace;line-height:1.7"></div>
+      </div>
+      <div class="card" style="max-width:560px">
+        <div class="card-hd"><div class="card-title">ℹ️ How to set up</div></div>
+        <ol style="font-size:.78rem;color:var(--t2);padding-left:18px;line-height:2">
+          <li>Go to <strong>github.com → Settings → Developer settings → Personal access tokens → Tokens (classic)</strong></li>
+          <li>Generate new token, select only <strong>gist</strong> scope</li>
+          <li>Paste the token above and click <strong>Push to Gist</strong></li>
+          <li>The Gist ID will be saved automatically for future syncs</li>
+          <li>On a new device: enter your token + Gist ID, then click <strong>Pull from Gist</strong></li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- ══════════ SHOPPING LIST ══════════ -->
+    <div class="page" id="page-shopping">
+      <div class="g2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">➕ Add to Shopping List</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px">
+            <input type="text" class="fi" id="sl-item" placeholder="Item name…" style="flex:1;min-width:140px" onkeydown="if(event.key==='Enter')addShopItem()">
+            <input type="number" class="fi" id="sl-qty" placeholder="Qty" style="width:64px" step="any">
+            <select class="fi" id="sl-unit" style="width:76px">
+              <option value="">Unit</option>
+              <option>kgs</option><option>gms</option><option>ltr</option><option>ml</option>
+              <option>nos</option><option>pkt</option><option>dozen</option>
+            </select>
+            <div class="fsel-w"><select class="fi fsel" id="sl-cat" style="min-width:110px">
+              <option value="">Category</option>
+            </select></div>
+            <input type="text" class="fi" id="sl-note" placeholder="Note (optional)" style="min-width:120px">
+            <button class="abtn sm" onclick="addShopItem()">+ Add</button>
+          </div>
+          <div style="font-size:.68rem;color:var(--t3);font-weight:600">Quick add from common items:</div>
+          <div id="sl-quick" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd">
+            <div class="card-title">📊 List Summary</div>
+          </div>
+          <div id="sl-summary" style="font-size:.8rem;color:var(--t2)"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">🛍️ Shopping List</div>
+          <div style="display:flex;gap:7px;align-items:center">
+            <div class="fsel-w"><select class="fsel" id="sl-filter-cat" onchange="renderShopList()"><option value="">All</option></select></div>
+            <button class="abtn sm" style="background:var(--red)" onclick="clearDoneItems()">Clear Done</button>
+            <button class="abtn sm" style="background:var(--green)" onclick="addAllDoneToPantry()">Move Done → Pantry</button>
+          </div>
+        </div>
+        <div id="shop-list"></div>
+      </div>
+    </div>
+
+    <!-- ══════════ PANTRY ══════════ -->
+    <div class="page" id="page-pantry">
+      <div class="g2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">➕ Add to Pantry</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+            <input type="text" class="fi" id="pt-item" placeholder="Item name…" style="flex:1;min-width:140px" onkeydown="if(event.key==='Enter')addPantryItem()">
+            <input type="number" class="fi" id="pt-qty" placeholder="Qty" style="width:64px" step="any">
+            <select class="fi" id="pt-unit" style="width:76px">
+              <option value="">Unit</option>
+              <option>kgs</option><option>gms</option><option>ltr</option><option>ml</option>
+              <option>nos</option><option>pkt</option><option>dozen</option>
+            </select>
+            <div class="fsel-w"><select class="fi fsel" id="pt-cat" style="min-width:110px">
+              <option value="">Category</option>
+            </select></div>
+            <button class="abtn sm" onclick="addPantryItem()">+ Add</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">📊 Pantry Summary</div></div>
+          <div id="pt-summary" style="font-size:.8rem;color:var(--t2)"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">🏺 Pantry Stock</div>
+          <div style="display:flex;gap:7px;align-items:center">
+            <div class="fsel-w"><select class="fsel" id="pt-filter-cat" onchange="renderPantry()"><option value="">All</option></select></div>
+            <div class="fsel-w"><select class="fsel" id="pt-sort" onchange="renderPantry()">
+              <option value="name">A-Z</option>
+              <option value="cat">Category</option>
+              <option value="added">Recently Added</option>
+              <option value="low">Low Stock First</option>
+            </select></div>
+          </div>
+        </div>
+        <div id="pantry-list"></div>
+      </div>
+    </div>
+
+
+  </div>
+</div>
+
+<!-- Icon Picker -->
+<div id="icon-picker" class="icon-picker" style="display:none">
+  <div class="icon-picker-tabs">
+    <button class="ip-tab on" id="ip-tab-emoji" onclick="switchIpTab('emoji')">😊 Emoji</button>
+    <button class="ip-tab" id="ip-tab-url" onclick="switchIpTab('url')">🔗 Image URL</button>
+  </div>
+  <div id="ip-emoji-panel">
+    <input class="ip-search" id="ip-q" placeholder="Search emoji…" oninput="filterIcons()">
+    <div class="icon-picker-grid" id="ip-grid"></div>
+  </div>
+  <div id="ip-url-panel" style="display:none">
+    <div class="ip-url-row">
+      <div class="ip-url-preview" id="ip-url-preview">?</div>
+      <input class="ip-search" id="ip-url" placeholder="Paste image URL or emoji…" oninput="previewIconUrl()" style="flex:1">
+    </div>
+    <div style="font-size:.62rem;color:var(--t3);margin-bottom:8px">Supports: https://… image links or any single emoji character</div>
+    <button class="abtn sm" onclick="applyIconUrl()" style="width:100%">Apply Icon</button>
+  </div>
+</div>
+
+<!-- Export overlay -->
+<div class="overlay" id="exp-overlay" onclick="if(event.target===this)closeExport()">
+  <div class="modal">
+    <div class="modal-title">Export Data</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="save-btn" onclick="exportJSON();closeExport()">↓ Full JSON Backup</button>
+      <button class="save-btn" style="background:var(--teal)" onclick="exportCSV();closeExport()">↓ Export as CSV</button>
+    </div>
+    <div class="modal-acts" style="margin-top:10px"><button class="mbtn" onclick="closeExport()">Cancel</button></div>
+  </div>
+</div>
+
+<!-- Confirm overlay -->
+<div class="overlay" id="confirm-overlay">
+  <div class="modal">
+    <div class="modal-title" id="c-title">Confirm</div>
+    <div class="modal-msg" id="c-msg"></div>
+    <div class="modal-acts">
+      <button class="mbtn" onclick="closeConfirm()">Cancel</button>
+      <button class="mbtn danger" id="c-ok">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// SEED DATA
+// ═══════════════════════════════════════════
+const SEED=[{"id":"1","date":"2026-01-01","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Other","online":false,"qty":"","unit":"","amount":2854.0,"note":""},{"id":"2","date":"2026-01-01","category":"Household","subcat":"Clothing & Tailoring","item":"Tailoring","store":"Other","online":false,"qty":"","unit":"","amount":110.0,"note":""},{"id":"3","date":"2026-01-02","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Medical Store","online":false,"qty":"","unit":"","amount":257.0,"note":""},{"id":"4","date":"2026-01-05","category":"Healthcare","subcat":"Hospital & Clinic","item":"Hospital Fees","store":"Other","online":false,"qty":"","unit":"","amount":1100.0,"note":""},{"id":"5","date":"2026-01-05","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Other","online":false,"qty":"","unit":"","amount":232.0,"note":""},{"id":"6","date":"2026-01-05","category":"Grocery","subcat":"Dining & Takeaway","item":"Dining Out","store":"Other","online":false,"qty":"","unit":"","amount":441.0,"note":""},{"id":"7","date":"2026-01-06","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Medical Store","online":false,"qty":"","unit":"","amount":200.0,"note":""},{"id":"8","date":"2026-01-06","category":"Grocery","subcat":"Fruits","item":"Coconut Oil","store":"Malayali Store","online":false,"qty":"3","unit":"ltr","amount":1200.0,"note":""},{"id":"9","date":"2026-01-08","category":"Grocery","subcat":"Spices & Condiments","item":"Chilli Powder","store":"Blinkit","online":true,"qty":"400","unit":"gms","amount":335.0,"note":""},{"id":"10","date":"2026-01-08","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":40.0,"note":""},{"id":"11","date":"2026-01-08","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Regular Store","online":false,"qty":"","unit":"","amount":80.0,"note":""},{"id":"12","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Jaggery","store":"Regular Store","online":false,"qty":"","unit":"","amount":65.0,"note":""},{"id":"13","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Pappadam","store":"Malayali Store","online":false,"qty":"3","unit":"pkt","amount":150.0,"note":""},{"id":"14","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Ada for Payasam","store":"Malayali Store","online":false,"qty":"2","unit":"pkt","amount":140.0,"note":""},{"id":"15","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Matta Rice","store":"Malayali Store","online":false,"qty":"10","unit":"kgs","amount":790.0,"note":""},{"id":"16","date":"2026-01-08","category":"Grocery","subcat":"Dairy","item":"Milk","store":"DMart","online":false,"qty":"1","unit":"ltr","amount":110.0,"note":""},{"id":"17","date":"2026-01-08","category":"Grocery","subcat":"Vegetables","item":"Brinjal","store":"DMart","online":false,"qty":"2","unit":"nos","amount":17.44,"note":""},{"id":"18","date":"2026-01-08","category":"Grocery","subcat":"Vegetables","item":"Cheera Leaf","store":"DMart","online":false,"qty":"2","unit":"nos","amount":30.0,"note":""},{"id":"19","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Cashew","store":"DMart","online":false,"qty":"500","unit":"gms","amount":429.0,"note":""},{"id":"20","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Almonds","store":"DMart","online":false,"qty":"1","unit":"kgs","amount":789.0,"note":""},{"id":"21","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Dates","store":"DMart","online":false,"qty":"500","unit":"gms","amount":119.0,"note":""},{"id":"22","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Raisins","store":"DMart","online":false,"qty":"500","unit":"gms","amount":239.0,"note":""},{"id":"23","date":"2026-01-08","category":"Grocery","subcat":"Beverages","item":"Coffee Powder","store":"DMart","online":false,"qty":"500","unit":"gms","amount":380.0,"note":""},{"id":"24","date":"2026-01-08","category":"Grocery","subcat":"Beverages","item":"Tea Powder","store":"DMart","online":false,"qty":"1","unit":"kgs","amount":570.0,"note":""},{"id":"25","date":"2026-01-08","category":"Grocery","subcat":"Spices & Condiments","item":"Turmeric Powder","store":"DMart","online":false,"qty":"100","unit":"gms","amount":29.0,"note":""},{"id":"26","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Flour","store":"DMart","online":false,"qty":"1","unit":"kgs","amount":46.5,"note":""},{"id":"27","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Groundnut","store":"DMart","online":false,"qty":"500","unit":"gms","amount":94.5,"note":""},{"id":"28","date":"2026-01-08","category":"Grocery","subcat":"Spices & Condiments","item":"Mustard Seed","store":"DMart","online":false,"qty":"200","unit":"gms","amount":25.0,"note":""},{"id":"29","date":"2026-01-08","category":"Grocery","subcat":"Sweets & Snacks","item":"Chocolates","store":"DMart","online":false,"qty":"1","unit":"pkt","amount":109.0,"note":""},{"id":"30","date":"2026-01-08","category":"Grocery","subcat":"Bakery & Snacks","item":"Biscuit","store":"DMart","online":false,"qty":"960","unit":"gms","amount":118.0,"note":""},{"id":"31","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Medicines","store":"DMart","online":false,"qty":"100","unit":"gms","amount":153.0,"note":""},{"id":"32","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Dettol Antiseptic","store":"DMart","online":false,"qty":"1","unit":"ltr","amount":414.87,"note":""},{"id":"33","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Soap","store":"DMart","online":false,"qty":"5","unit":"nos","amount":155.0,"note":""},{"id":"34","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Kitchenware","store":"DMart","online":false,"qty":"","unit":"","amount":92.0,"note":""},{"id":"35","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Home Accessories","store":"DMart","online":false,"qty":"2","unit":"nos","amount":278.0,"note":""},{"id":"36","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Kitchenware","store":"DMart","online":false,"qty":"3","unit":"nos","amount":192.0,"note":""},{"id":"37","date":"2026-01-08","category":"Household","subcat":"Utensils & Kitchenware","item":"Kitchenware","store":"DMart","online":false,"qty":"1","unit":"nos","amount":139.0,"note":""},{"id":"38","date":"2026-01-08","category":"Household","subcat":"Utensils & Kitchenware","item":"Utensil Set","store":"DMart","online":false,"qty":"","unit":"","amount":1029.0,"note":""},{"id":"39","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Toothbrush","store":"DMart","online":false,"qty":"","unit":"","amount":98.0,"note":""},{"id":"40","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Skincare","store":"DMart","online":false,"qty":"1","unit":"nos","amount":140.0,"note":""},{"id":"41","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Skincare","store":"DMart","online":false,"qty":"600","unit":"ml","amount":380.0,"note":""},{"id":"42","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Hair Dye","store":"DMart","online":false,"qty":"1","unit":"pkt","amount":34.0,"note":""},{"id":"43","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Deodorant","store":"DMart","online":false,"qty":"200","unit":"ml","amount":149.5,"note":""},{"id":"44","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Hand Wash","store":"DMart","online":false,"qty":"725","unit":"ml","amount":84.0,"note":""},{"id":"45","date":"2026-01-08","category":"Household","subcat":"Cleaning Supplies","item":"Washing Detergent","store":"DMart","online":false,"qty":"4","unit":"ltr","amount":599.0,"note":""},{"id":"46","date":"2026-01-08","category":"Household","subcat":"Cleaning Supplies","item":"Cleaning Tools","store":"DMart","online":false,"qty":"2","unit":"nos","amount":40.0,"note":""},{"id":"47","date":"2026-01-08","category":"Household","subcat":"Utensils & Kitchenware","item":"Kitchenware","store":"DMart","online":false,"qty":"1","unit":"nos","amount":49.0,"note":""},{"id":"48","date":"2026-01-08","category":"Household","subcat":"Cleaning Supplies","item":"Cleaning Tools","store":"DMart","online":false,"qty":"1","unit":"nos","amount":99.0,"note":""},{"id":"49","date":"2026-01-09","category":"Grocery","subcat":"Fish","item":"Fish","store":"Regular Store","online":false,"qty":"4","unit":"kgs","amount":2200.0,"note":""},{"id":"50","date":"2026-01-09","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":800.0,"note":""},{"id":"51","date":"2026-01-09","category":"Healthcare","subcat":"Medicines","item":"Medical Equipment","store":"Amazon","online":true,"qty":"","unit":"","amount":298.0,"note":""},{"id":"52","date":"2026-01-09","category":"Household","subcat":"Cleaning Supplies","item":"Dishwashing Liquid","store":"Flipkart","online":true,"qty":"","unit":"","amount":148.0,"note":""},{"id":"53","date":"2026-01-09","category":"Grocery","subcat":"Vegetables","item":"Curry Leaves","store":"Flipkart","online":true,"qty":"","unit":"","amount":18.0,"note":""},{"id":"54","date":"2026-01-09","category":"Grocery","subcat":"Vegetables","item":"Snake Gourd","store":"Flipkart","online":true,"qty":"","unit":"","amount":39.0,"note":""},{"id":"55","date":"2026-01-09","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Flipkart","online":true,"qty":"500","unit":"ml","amount":1.0,"note":""},{"id":"56","date":"2026-01-09","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Flipkart","online":true,"qty":"500","unit":"gms","amount":1.0,"note":""},{"id":"57","date":"2026-01-09","category":"Household","subcat":"Utensils & Kitchenware","item":"Utensil","store":"Amazon","online":true,"qty":"1","unit":"nos","amount":899.0,"note":""},{"id":"58","date":"2026-01-09","category":"Household","subcat":"Home & Garden","item":"Newspaper","store":"Other","online":false,"qty":"","unit":"","amount":440.0,"note":""},{"id":"59","date":"2026-01-10","category":"Household","subcat":"Cleaning Supplies","item":"Pest Control","store":"DMart","online":false,"qty":"1","unit":"nos","amount":230.0,"note":""},{"id":"60","date":"2026-01-10","category":"Household","subcat":"Utensils & Kitchenware","item":"Kitchenware","store":"DMart","online":false,"qty":"","unit":"","amount":49.0,"note":""},{"id":"61","date":"2026-01-10","category":"Household","subcat":"Cleaning Supplies","item":"Tissue Paper","store":"DMart","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"62","date":"2026-01-10","category":"Grocery","subcat":"Staples & Pantry","item":"Coriander Powder","store":"DMart","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"63","date":"2026-01-10","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Malayali Store","online":false,"qty":"4","unit":"kgs","amount":440.0,"note":""},{"id":"64","date":"2026-01-10","category":"Grocery","subcat":"Vegetables","item":"Kachil","store":"Malayali Store","online":false,"qty":"760","unit":"gms","amount":122.0,"note":""},{"id":"65","date":"2026-01-10","category":"Grocery","subcat":"Vegetables","item":"Shallots","store":"Malayali Store","online":false,"qty":"760","unit":"gms","amount":99.0,"note":""},{"id":"66","date":"2026-01-10","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Malayali Store","online":false,"qty":"3.27","unit":"kgs","amount":228.0,"note":""},{"id":"67","date":"2026-01-10","category":"Grocery","subcat":"Staples & Pantry","item":"Matta Rice","store":"Malayali Store","online":false,"qty":"1","unit":"nos","amount":102.0,"note":""},{"id":"68","date":"2026-01-11","category":"Grocery","subcat":"Spices & Condiments","item":"Cardamom","store":"Regular Store","online":false,"qty":"50","unit":"gms","amount":220.0,"note":""},{"id":"69","date":"2026-01-12","category":"Household","subcat":"Home & Garden","item":"Disposable Cups","store":"Flipkart","online":true,"qty":"","unit":"","amount":184.0,"note":""},{"id":"70","date":"2026-01-12","category":"Utilities","subcat":"Mobile Recharge","item":"BSNL Recharge","store":"Other","online":false,"qty":"","unit":"","amount":153.0,"note":""},{"id":"71","date":"2026-01-12","category":"Grocery","subcat":"Dining & Takeaway","item":"Hospital Food","store":"Other","online":false,"qty":"","unit":"","amount":858.0,"note":""},{"id":"72","date":"2026-01-13","category":"Healthcare","subcat":"Hospital & Clinic","item":"Parking","store":"Other","online":false,"qty":"","unit":"","amount":80.0,"note":""},{"id":"73","date":"2026-01-13","category":"Grocery","subcat":"Dining & Takeaway","item":"Hospital Food","store":"Other","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"74","date":"2026-01-13","category":"Healthcare","subcat":"Hospital & Clinic","item":"Hospital Fees","store":"Other","online":false,"qty":"","unit":"","amount":131.0,"note":""},{"id":"75","date":"2026-01-14","category":"Grocery","subcat":"Bakery & Snacks","item":"Chiwda","store":"Flipkart","online":true,"qty":"400","unit":"gms","amount":161.0,"note":""},{"id":"76","date":"2026-01-14","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Malayali Store","online":false,"qty":"1.2","unit":"kgs","amount":120.0,"note":""},{"id":"77","date":"2026-01-14","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":42.0,"note":""},{"id":"78","date":"2026-01-15","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Regular Store","online":false,"qty":"3","unit":"nos","amount":210.0,"note":""},{"id":"79","date":"2026-01-16","category":"Household","subcat":"Home & Garden","item":"Bag","store":"Regular Store","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"80","date":"2026-01-16","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"","unit":"","amount":50.0,"note":""},{"id":"81","date":"2026-01-16","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"82","date":"2026-01-16","category":"Grocery","subcat":"Vegetables","item":"Lady\u2019s Finger Okra","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"83","date":"2026-01-16","category":"Grocery","subcat":"Vegetables","item":"Methi Leaves","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"84","date":"2026-01-18","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":300.0,"note":""},{"id":"85","date":"2026-01-18","category":"Grocery","subcat":"Eggs & Dairy","item":"Eggs","store":"Regular Store","online":false,"qty":"","unit":"","amount":270.0,"note":""},{"id":"86","date":"2026-01-19","category":"Transport","subcat":"Petrol","item":"Petrol","store":"Other","online":false,"qty":"","unit":"","amount":1038.0,"note":""},{"id":"87","date":"2026-01-19","category":"Healthcare","subcat":"Hospital & Clinic","item":"Parking","store":"Other","online":false,"qty":"","unit":"","amount":1038.0,"note":""},{"id":"88","date":"2026-01-20","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"","unit":"","amount":200.0,"note":""},{"id":"89","date":"2026-01-20","category":"Grocery","subcat":"Fruits","item":"Grapes","store":"Regular Store","online":false,"qty":"","unit":"","amount":150.0,"note":""},{"id":"90","date":"2026-01-20","category":"Grocery","subcat":"Dining & Takeaway","item":"Juice / Drink","store":"Other","online":false,"qty":"","unit":"","amount":399.0,"note":""},{"id":"91","date":"2026-01-21","category":"Grocery","subcat":"Staples & Pantry","item":"Rice","store":"Regular Store","online":false,"qty":"5","unit":"kgs","amount":220.0,"note":""},{"id":"92","date":"2026-01-21","category":"Grocery","subcat":"Staples & Pantry","item":"Wheat","store":"Regular Store","online":false,"qty":"5","unit":"kgs","amount":230.0,"note":""},{"id":"93","date":"2026-01-21","category":"Grocery","subcat":"Meat","item":"Mutton","store":"Regular Store","online":false,"qty":"","unit":"","amount":1350.0,"note":""},{"id":"94","date":"2026-01-21","category":"Grocery","subcat":"Vegetables","item":"Mint Leaves","store":"Regular Store","online":false,"qty":"","unit":"","amount":20.0,"note":""},{"id":"95","date":"2026-01-21","category":"Grocery","subcat":"Vegetables","item":"Coriander Leaves","store":"Regular Store","online":false,"qty":"","unit":"","amount":20.0,"note":""},{"id":"96","date":"2026-01-21","category":"Grocery","subcat":"Dairy","item":"Curd","store":"Regular Store","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"97","date":"2026-01-21","category":"Grocery","subcat":"Staples & Pantry","item":"Flour Mill","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"98","date":"2026-01-22","category":"Utilities","subcat":"Internet","item":"Internet (Microscan)","store":"Other","online":false,"qty":"","unit":"","amount":589.0,"note":""},{"id":"99","date":"2026-01-22","category":"Utilities","subcat":"Electricity","item":"Electricity (MSEB)","store":"Other","online":false,"qty":"","unit":"","amount":2260.0,"note":""},{"id":"100","date":"2026-01-23","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"101","date":"2026-01-23","category":"Grocery","subcat":"Vegetables","item":"Snake Gourd","store":"Regular Store","online":false,"qty":"","unit":"","amount":70.0,"note":""},{"id":"102","date":"2026-01-23","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"","unit":"","amount":50.0,"note":""},{"id":"103","date":"2026-01-23","category":"Grocery","subcat":"Vegetables","item":"Carrot","store":"Regular Store","online":false,"qty":"","unit":"","amount":30.0,"note":""},{"id":"104","date":"2026-01-23","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Regular Store","online":false,"qty":"","unit":"","amount":176.0,"note":""},{"id":"105","date":"2026-01-23","category":"Grocery","subcat":"Fruits","item":"Banana","store":"Regular Store","online":false,"qty":"","unit":"","amount":199.0,"note":""},{"id":"106","date":"2026-01-23","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"107","date":"2026-01-25","category":"Grocery","subcat":"Fish","item":"Fish","store":"Regular Store","online":false,"qty":"","unit":"","amount":1014.0,"note":""},{"id":"108","date":"2026-01-26","category":"Grocery","subcat":"Staples & Pantry","item":"Sunflower Oil","store":"Flipkart","online":true,"qty":"","unit":"","amount":150.0,"note":""},{"id":"109","date":"2026-01-26","category":"Household","subcat":"Home & Garden","item":"Plant Seeds","store":"Meesho","online":true,"qty":"","unit":"","amount":171.0,"note":""},{"id":"110","date":"2026-01-26","category":"Household","subcat":"Home & Garden","item":"Plant Pots","store":"Meesho","online":true,"qty":"","unit":"","amount":472.0,"note":""},{"id":"111","date":"2026-01-27","category":"Grocery","subcat":"Meat","item":"Beef","store":"Regular Store","online":false,"qty":"","unit":"","amount":600.0,"note":""},{"id":"112","date":"2026-01-27","category":"Grocery","subcat":"Vegetables","item":"Garlic","store":"Regular Store","online":false,"qty":"","unit":"","amount":80.0,"note":""},{"id":"113","date":"2026-01-27","category":"Grocery","subcat":"Bakery & Snacks","item":"Porotta / Takeaway","store":"Regular Store","online":false,"qty":"","unit":"","amount":242.0,"note":""},{"id":"114","date":"2026-01-27","category":"Grocery","subcat":"Vegetables","item":"Curry Leaves","store":"Flipkart","online":true,"qty":"","unit":"","amount":18.0,"note":""},{"id":"115","date":"2026-01-27","category":"Grocery","subcat":"Bakery & Snacks","item":"Oats","store":"Flipkart","online":true,"qty":"","unit":"","amount":140.0,"note":""},{"id":"116","date":"2026-01-28","category":"Grocery","subcat":"Fruits","item":"Apple","store":"Regular Store","online":false,"qty":"","unit":"","amount":250.0,"note":""},{"id":"117","date":"2026-01-28","category":"Utilities","subcat":"Housing & Misc","item":"Appliance Repair","store":"Regular Store","online":false,"qty":"","unit":"","amount":90.0,"note":""},{"id":"118","date":"2026-01-29","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"","unit":"","amount":58.0,"note":""},{"id":"119","date":"2026-01-29","category":"Grocery","subcat":"Bakery & Snacks","item":"Bread","store":"Regular Store","online":false,"qty":"","unit":"","amount":65.0,"note":""},{"id":"120","date":"2026-01-29","category":"Grocery","subcat":"Vegetables","item":"Ginger","store":"Regular Store","online":false,"qty":"","unit":"","amount":20.0,"note":""},{"id":"121","date":"2026-01-29","category":"Utilities","subcat":"Mobile Recharge","item":"Airtel Recharge","store":"Other","online":false,"qty":"","unit":"","amount":548.0,"note":""},{"id":"122","date":"2026-01-30","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"123","date":"2026-01-30","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"124","date":"2026-01-30","category":"Grocery","subcat":"Vegetables","item":"Corn","store":"Regular Store","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"125","date":"2026-01-31","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Regular Store","online":false,"qty":"","unit":"","amount":30.0,"note":""},{"id":"126","date":"2026-01-31","category":"Grocery","subcat":"Vegetables","item":"Coriander Leaves","store":"Regular Store","online":false,"qty":"","unit":"","amount":20.0,"note":""},{"id":"127","date":"2026-01-31","category":"Transport","subcat":"Bike Maintenance","item":"Bike Servicing","store":"Regular Store","online":false,"qty":"","unit":"","amount":1110.0,"note":""},{"id":"128","date":"2026-02-01","category":"Personal","subcat":"Thomas","item":"Monthly Allowance","store":"Other","online":false,"qty":"","unit":"","amount":2500.0,"note":""},{"id":"129","date":"2026-02-01","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Malayali Store","online":false,"qty":"3.4","unit":"kgs","amount":238.0,"note":""},{"id":"130","date":"2026-02-01","category":"Grocery","subcat":"Eggs & Dairy","item":"Duck Eggs","store":"Malayali Store","online":false,"qty":"6","unit":"nos","amount":90.0,"note":""},{"id":"131","date":"2026-02-01","category":"Grocery","subcat":"Dining & Takeaway","item":"Juice / Drink","store":"Regular Store","online":false,"qty":"3","unit":"nos","amount":756.0,"note":""},{"id":"132","date":"2026-02-02","category":"Grocery","subcat":"Spices & Condiments","item":"Red Chilli Whole","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":370.0,"note":""},{"id":"133","date":"2026-02-02","category":"Grocery","subcat":"Spices & Condiments","item":"Coriander Seeds","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":160.0,"note":""},{"id":"134","date":"2026-02-02","category":"Household","subcat":"Clothing & Tailoring","item":"Belt","store":"Regular Store","online":false,"qty":"1","unit":"nos","amount":160.0,"note":""},{"id":"135","date":"2026-02-02","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Regular Store","online":false,"qty":"","unit":"","amount":160.0,"note":""},{"id":"136","date":"2026-02-02","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Other","online":false,"qty":"45","unit":"ltr","amount":2436.0,"note":""},{"id":"137","date":"2026-02-02","category":"Grocery","subcat":"Bakery & Snacks","item":"Bread","store":"Flipkart","online":true,"qty":"400","unit":"gms","amount":36.0,"note":""},{"id":"138","date":"2026-02-02","category":"Grocery","subcat":"Spices & Condiments","item":"Turmeric Powder","store":"Flipkart","online":true,"qty":"200","unit":"gms","amount":63.0,"note":""},{"id":"139","date":"2026-02-03","category":"Utilities","subcat":"Cooking Gas","item":"Cooking Gas","store":"Other","online":false,"qty":"","unit":"","amount":880.0,"note":""},{"id":"140","date":"2026-02-04","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":200.0,"note":""},{"id":"141","date":"2026-02-04","category":"Grocery","subcat":"Fruits","item":"Grapes","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":150.0,"note":""},{"id":"142","date":"2026-02-04","category":"Household","subcat":"Toiletries & Grooming","item":"Skincare","store":"Regular Store","online":false,"qty":"","unit":"","amount":90.0,"note":""},{"id":"143","date":"2026-02-04","category":"Household","subcat":"Toiletries & Grooming","item":"Skincare","store":"Regular Store","online":false,"qty":"","unit":"","amount":140.0,"note":""},{"id":"144","date":"2026-02-04","category":"Grocery","subcat":"Vegetables","item":"Potato","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":30.0,"note":""},{"id":"145","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Regular Store","online":false,"qty":"4","unit":"kgs","amount":100.0,"note":""},{"id":"146","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Potato","store":"Regular Store","online":false,"qty":"1.25","unit":"kgs","amount":30.0,"note":""},{"id":"147","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Carrot","store":"Regular Store","online":false,"qty":"0.5","unit":"","amount":30.0,"note":""},{"id":"148","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Lady\u2019s Finger Okra","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"149","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Beans","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"150","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Ivy Gourd","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"151","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Papaya","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"152","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Raw Banana","store":"Regular Store","online":false,"qty":"5","unit":"nos","amount":20.0,"note":""},{"id":"153","date":"2026-02-06","category":"Grocery","subcat":"Fish","item":"Fish (Bangda)","store":"Regular Store","online":false,"qty":"1.215","unit":"kgs","amount":413.0,"note":""},{"id":"154","date":"2026-02-06","category":"Grocery","subcat":"Fish","item":"Fish (Halwa)","store":"Regular Store","online":false,"qty":"0.820","unit":"kgs","amount":656.0,"note":""},{"id":"155","date":"2026-02-06","category":"Grocery","subcat":"Fish","item":"Fish (Soundade)","store":"Regular Store","online":false,"qty":"1.065","unit":"kgs","amount":320.0,"note":""},{"id":"156","date":"2026-02-06","category":"Utilities","subcat":"Housing & Misc","item":"Bike Repair","store":"Regular Store","online":false,"qty":"","unit":"","amount":350.0,"note":""},{"id":"157","date":"2026-02-06","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"3","unit":"kgs","amount":240.0,"note":""},{"id":"158","date":"2026-02-06","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Cashew","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":860.0,"note":""},{"id":"159","date":"2026-02-06","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":44.0,"note":""},{"id":"160","date":"2026-02-06","category":"Healthcare","subcat":"Fitness","item":"Fitness Equipment","store":"Amazon","online":true,"qty":"","unit":"","amount":704.0,"note":""},{"id":"161","date":"2026-02-07","category":"Utilities","subcat":"Church & Donations","item":"Church Contribution","store":"Other","online":false,"qty":"","unit":"","amount":2000.0,"note":""},{"id":"162","date":"2026-02-07","category":"Household","subcat":"Skincare & Beauty","item":"Cosmetics","store":"Regular Store","online":false,"qty":"","unit":"","amount":260.0,"note":""},{"id":"163","date":"2026-02-07","category":"Grocery","subcat":"Eggs & Dairy","item":"Eggs","store":"Regular Store","online":false,"qty":"6","unit":"nos","amount":45.0,"note":""},{"id":"164","date":"2026-02-08","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":270.0,"note":""},{"id":"165","date":"2026-02-08","category":"Transport","subcat":"Petrol","item":"Petrol","store":"Other","online":false,"qty":"2","unit":"nos","amount":1038.0,"note":""},{"id":"166","date":"2026-02-08","category":"Grocery","subcat":"Bakery & Snacks","item":"Cake","store":"Regular Store","online":false,"qty":"","unit":"","amount":300.0,"note":""},{"id":"167","date":"2026-02-09","category":"Grocery","subcat":"Staples & Pantry","item":"Wheat","store":"Regular Store","online":false,"qty":"10","unit":"kgs","amount":440.0,"note":""},{"id":"168","date":"2026-02-09","category":"Grocery","subcat":"Fruits","item":"Grapes","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":300.0,"note":""},{"id":"169","date":"2026-02-09","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"3","unit":"kgs","amount":220.0,"note":""},{"id":"170","date":"2026-02-10","category":"Grocery","subcat":"Staples & Pantry","item":"Soap","store":"Flipkart","online":true,"qty":"8","unit":"nos","amount":432.0,"note":""},{"id":"171","date":"2026-02-10","category":"Grocery","subcat":"Staples & Pantry","item":"Shaving Cream","store":"Flipkart","online":true,"qty":"","unit":"","amount":48.0,"note":""},{"id":"172","date":"2026-02-10","category":"Grocery","subcat":"Staples & Pantry","item":"Deodorant","store":"Flipkart","online":true,"qty":"3","unit":"nos","amount":226.0,"note":""},{"id":"173","date":"2026-02-10","category":"Grocery","subcat":"Beverages","item":"Tea Powder","store":"Flipkart","online":true,"qty":"1","unit":"kgs","amount":500.0,"note":""},{"id":"174","date":"2026-02-10","category":"Grocery","subcat":"Staples & Pantry","item":"Flour Mill","store":"Other","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"175","date":"2026-02-10","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":100.0,"note":""},{"id":"176","date":"2026-02-10","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":80.0,"note":""},{"id":"177","date":"2026-02-10","category":"Grocery","subcat":"Vegetables","item":"Ginger","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":80.0,"note":""},{"id":"178","date":"2026-02-10","category":"Grocery","subcat":"Vegetables","item":"Lady\u2019s Finger Okra","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":40.0,"note":""},{"id":"179","date":"2026-02-11","category":"Grocery","subcat":"Vegetables","item":"Papaya","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":50.0,"note":""},{"id":"180","date":"2026-02-11","category":"Grocery","subcat":"Vegetables","item":"Snake Gourd","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":50.0,"note":""},{"id":"181","date":"2026-02-11","category":"Grocery","subcat":"Beverages","item":"Coffee Powder","store":"Amazon","online":true,"qty":"500","unit":"gms","amount":314.0,"note":""},{"id":"182","date":"2026-02-12","category":"Household","subcat":"Cleaning Supplies","item":"Washing Detergent","store":"Flipkart","online":true,"qty":"10","unit":"ltr","amount":307.0,"note":""},{"id":"183","date":"2026-02-13","category":"Utilities","subcat":"Housing & Misc","item":"Bike Repair","store":"Other","online":false,"qty":"","unit":"","amount":850.0,"note":""},{"id":"184","date":"2026-02-13","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"185","date":"2026-02-14","category":"Grocery","subcat":"Meat","item":"Chicken","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":130.0,"note":""},{"id":"186","date":"2026-02-14","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"187","date":"2026-02-14","category":"Grocery","subcat":"Dairy","item":"Paneer","store":"Regular Store","online":false,"qty":"250","unit":"gms","amount":90.0,"note":""},{"id":"188","date":"2026-02-14","category":"Grocery","subcat":"Bakery & Snacks","item":"Porotta / Takeaway","store":"Regular Store","online":false,"qty":"10","unit":"nos","amount":242.0,"note":""},{"id":"189","date":"2026-02-15","category":"Grocery","subcat":"Bakery & Snacks","item":"Biscuit","store":"Other","online":false,"qty":"960","unit":"gms","amount":121.0,"note":""},{"id":"190","date":"2026-02-15","category":"Grocery","subcat":"Bakery & Snacks","item":"Porotta / Takeaway","store":"Regular Store","online":false,"qty":"6","unit":"nos","amount":145.0,"note":""},{"id":"191","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Potato","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":30.0,"note":""},{"id":"192","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Green Gourd","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":60.0,"note":""},{"id":"193","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Yam","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":60.0,"note":""},{"id":"194","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Ivy Gourd","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":30.0,"note":""},{"id":"195","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":30.0,"note":""},{"id":"196","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Carrot","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":40.0,"note":""},{"id":"197","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Brinjal","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":30.0,"note":""},{"id":"198","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":100.0,"note":""},{"id":"199","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Pumpkin","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":50.0,"note":""},{"id":"200","date":"2026-02-16","category":"Grocery","subcat":"Sweets & Snacks","item":"Snacks","store":"Regular Store","online":false,"qty":"5","unit":"nos","amount":105.0,"note":""},{"id":"201","date":"2026-02-16","category":"Grocery","subcat":"Sweets & Snacks","item":"Chocolates","store":"Regular Store","online":false,"qty":"","unit":"","amount":125.0,"note":""},{"id":"202","date":"2026-02-17","category":"Utilities","subcat":"Housing & Misc","item":"Appliance Repair","store":"Other","online":false,"qty":"","unit":"","amount":500.0,"note":""},{"id":"203","date":"2026-02-18","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"DMart","online":false,"qty":"1","unit":"kgs","amount":44.0,"note":""},{"id":"204","date":"2026-02-18","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"205","date":"2026-02-18","category":"Household","subcat":"Cleaning Supplies","item":"Washing Detergent","store":"DMart","online":false,"qty":"4","unit":"kgs","amount":569.0,"note":""},{"id":"206","date":"2026-02-18","category":"Grocery","subcat":"Staples & Pantry","item":"Basmati Rice","store":"DMart","online":false,"qty":"5.462","unit":"kgs","amount":300.41,"note":""},{"id":"207","date":"2026-02-18","category":"Grocery","subcat":"Staples & Pantry","item":"Medical Supplies","store":"Malayali Store","online":false,"qty":"5","unit":"nos","amount":33.0,"note":""},{"id":"208","date":"2026-02-18","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Malayali Store","online":false,"qty":"1.79","unit":"kgs","amount":125.3,"note":""},{"id":"209","date":"2026-02-18","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Malayali Store","online":false,"qty":"5.99","unit":"kgs","amount":599.0,"note":""},{"id":"210","date":"2026-02-18","category":"Grocery","subcat":"Vegetables","item":"Shallots","store":"Malayali Store","online":false,"qty":"610","unit":"gms","amount":73.0,"note":""},{"id":"211","date":"2026-02-18","category":"Grocery","subcat":"Sweets & Snacks","item":"Indian Sweets","store":"Regular Store","online":false,"qty":"","unit":"","amount":160.0,"note":""},{"id":"212","date":"2026-02-20","category":"Utilities","subcat":"Electricity","item":"Electricity (MSEB)","store":"Other","online":false,"qty":"","unit":"","amount":2530.0,"note":""},{"id":"213","date":"2026-02-20","category":"Utilities","subcat":"Internet","item":"Internet (Microscan)","store":"Other","online":false,"qty":"","unit":"","amount":589.0,"note":""},{"id":"214","date":"2026-02-21","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"215","date":"2026-02-22","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Regular Store","online":false,"qty":"2.34","unit":"kgs","amount":163.0,"note":""},{"id":"216","date":"2026-02-22","category":"Grocery","subcat":"Vegetables","item":"Shallots","store":"Regular Store","online":false,"qty":"780","unit":"gms","amount":94.0,"note":""},{"id":"217","date":"2026-02-22","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"218","date":"2026-02-23","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":340.0,"note":""},{"id":"219","date":"2026-02-23","category":"Utilities","subcat":"Housing & Misc","item":"Aadhaar Card","store":"Other","online":false,"qty":"","unit":"","amount":75.0,"note":""},{"id":"220","date":"2026-02-23","category":"Utilities","subcat":"Church & Donations","item":"Songbooks","store":"Other","online":false,"qty":"","unit":"","amount":75.0,"note":""},{"id":"221","date":"2026-02-23","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"222","date":"2026-02-24","category":"Grocery","subcat":"Staples & Pantry","item":"Pappadam","store":"Malayali Store","online":false,"qty":"","unit":"","amount":50.0,"note":""},{"id":"223","date":"2026-02-25","category":"Healthcare","subcat":"Medical Supplies","item":"Medical Supplies","store":"Regular Store","online":false,"qty":"","unit":"","amount":190.0,"note":""},{"id":"224","date":"2026-02-26","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"225","date":"2026-02-26","category":"Grocery","subcat":"Dairy","item":"IceCream","store":"Regular Store","online":false,"qty":"750","unit":"ml","amount":105.0,"note":""},{"id":"226","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":50.0,"note":""},{"id":"227","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Okra","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":40.0,"note":""},{"id":"228","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Potato","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":30.0,"note":""},{"id":"229","date":"2026-02-27","category":"Grocery","subcat":"Dairy","item":"IceCream","store":"Regular Store","online":false,"qty":"1.5","unit":"kgs","amount":210.0,"note":""},{"id":"230","date":"2026-02-27","category":"Grocery","subcat":"Bakery & Snacks","item":"Sunfeast Noodles","store":"Flipkart","online":true,"qty":"","unit":"","amount":94.0,"note":""},{"id":"231","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Curry Leaves","store":"Flipkart","online":true,"qty":"","unit":"","amount":9.0,"note":""},{"id":"232","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Peas Peeled","store":"Flipkart","online":true,"qty":"250","unit":"gms","amount":50.0,"note":""},{"id":"233","date":"2026-02-27","category":"Grocery","subcat":"Spices & Condiments","item":"Salt","store":"Flipkart","online":true,"qty":"1","unit":"kgs","amount":25.0,"note":""},{"id":"234","date":"2026-02-27","category":"Grocery","subcat":"Staples & Pantry","item":"Flour","store":"Flipkart","online":true,"qty":"1","unit":"kgs","amount":47.0,"note":""},{"id":"235","date":"2026-02-27","category":"Household","subcat":"Toiletries & Grooming","item":"String","store":"Meesho","online":true,"qty":"","unit":"","amount":100.0,"note":""},{"id":"236","date":"2026-02-28","category":"Grocery","subcat":"Staples & Pantry","item":"Flour Mill","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"237","date":"2026-03-01","category":"Household","subcat":"Clothing & Tailoring","item":"Shoes","store":"Myntra","online":true,"qty":"","unit":"","amount":583.0,"note":""},{"id":"238","date":"2026-03-01","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"239","date":"2026-03-02","category":"Personal","subcat":"Thomas","item":"Monthly Allowance","store":"Other","online":false,"qty":"","unit":"","amount":2500.0,"note":""},{"id":"240","date":"2026-03-02","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":44.0,"note":""},{"id":"241","date":"2026-03-02","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"242","date":"2026-03-02","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Other","online":false,"qty":"30","unit":"ltr","amount":1640.0,"note":""},{"id":"243","date":"2026-03-02","category":"Grocery","subcat":"Staples & Pantry","item":"Matta Rice","store":"Regular Store","online":false,"qty":"10","unit":"kgs","amount":790.0,"note":""},{"id":"244","date":"2026-03-02","category":"Grocery","subcat":"Staples & Pantry","item":"Pappadam","store":"Regular Store","online":false,"qty":"","unit":"","amount":50.0,"note":""},{"id":"245","date":"2026-03-02","category":"Grocery","subcat":"Staples & Pantry","item":"Sunflower Oil","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":170.0,"note":""},{"id":"246","date":"2026-03-03","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":620.0,"note":""},{"id":"247","date":"2026-03-03","category":"Household","subcat":"Cleaning Supplies","item":"Glass Cleaner","store":"Flipkart","online":true,"qty":"1","unit":"ltr","amount":94.0,"note":""},{"id":"248","date":"2026-03-03","category":"Household","subcat":"Cleaning Supplies","item":"Dishwashing Liquid","store":"Flipkart","online":true,"qty":"2","unit":"ltr","amount":214.0,"note":""},{"id":"249","date":"2026-03-03","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Flipkart","online":true,"qty":"500","unit":"gms","amount":1.0,"note":""},{"id":"250","date":"2026-03-03","category":"Household","subcat":"Toiletries & Grooming","item":"Soap","store":"Flipkart","online":true,"qty":"6","unit":"nos","amount":107.0,"note":""},{"id":"251","date":"2026-03-03","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Flipkart","online":true,"qty":"1","unit":"ltr","amount":30.0,"note":""},{"id":"252","date":"2026-03-03","category":"Personal","subcat":"Amal","item":"Monthly Allowance","store":"Other","online":false,"qty":"","unit":"","amount":500.0,"note":""},{"id":"253","date":"2026-03-03","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":70.0,"note":""},{"id":"254","date":"2026-03-05","category":"Grocery","subcat":"Staples & Pantry","item":"Moong Whole","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":260.0,"note":""},{"id":"255","date":"2026-03-05","category":"Grocery","subcat":"Staples & Pantry","item":"Chana Dal","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":70.0,"note":""},{"id":"256","date":"2026-03-05","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"257","date":"2026-03-05","category":"Grocery","subcat":"Fruits","item":"Banana","store":"Regular Store","online":false,"qty":"6","unit":"nos","amount":30.0,"note":""},{"id":"258","date":"2026-03-06","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Malayali Store","online":false,"qty":"3.12","unit":"kgs","amount":218.0,"note":""},{"id":"259","date":"2026-03-06","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Malayali Store","online":false,"qty":"3.12","unit":"kgs","amount":312.0,"note":""},{"id":"260","date":"2026-03-09","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":360.0,"note":""},{"id":"261","date":"2026-03-09","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"262","date":"2026-03-09","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":44.0,"note":""},{"id":"263","date":"2026-03-09","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":70.0,"note":""},{"id":"264","date":"2026-03-10","category":"Grocery","subcat":"Spices & Condiments","item":"Chilli Powder","store":"Regular Store","online":false,"qty":"100","unit":"gms","amount":58.0,"note":""},{"id":"265","date":"2026-03-10","category":"Grocery","subcat":"Spices & Condiments","item":"Pav Bhaji Masala","store":"Regular Store","online":false,"qty":"50","unit":"gms","amount":48.0,"note":""},{"id":"266","date":"2026-03-10","category":"Utilities","subcat":"Housing & Misc","item":"Aadhaar Card","store":"Other","online":false,"qty":"3","unit":"nos","amount":225.0,"note":""},{"id":"267","date":"2026-03-10","category":"Grocery","subcat":"Bakery & Snacks","item":"Bread","store":"Regular Store","online":false,"qty":"10","unit":"nos","amount":150.0,"note":""}]
+;
+
+// ═══════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════
+const K={E:'kh3_entries',C:'kh3_cats',S:'kh3_stores',G:'kh3_gist',SL:'kh3_shoplist',PT:'kh3_pantry'};
+const ld=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}};
+const sv=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+
+const DEFAULT_CATS=[
+  {name:'Grocery',icon:'🛒',subs:['Vegetables','Fruits','Fish','Meat','Eggs & Dairy','Dairy','Bakery & Snacks','Dining & Takeaway','Sweets & Snacks','Dry Fruits & Nuts','Beverages','Spices & Condiments','Staples & Pantry']},
+  {name:'Household',icon:'🏠',subs:['Cleaning Supplies','Toiletries & Grooming','Skincare & Beauty','Utensils & Kitchenware','Clothing & Tailoring','Home & Garden']},
+  {name:'Healthcare',icon:'💊',subs:['Medicines','Hospital & Clinic','Medical Supplies','Fitness']},
+  {name:'Utilities',icon:'⚡',subs:['Electricity','Cooking Gas','Internet','Mobile Recharge','Church & Donations','Housing & Misc']},
+  {name:'Transport',icon:'🚗',subs:['Petrol','Bike Maintenance','Parking','Auto / Cab']},
+  {name:'Personal',icon:'👤',subs:['Thomas','Amal','Sissy']},
+];
+const DEFAULT_STORES=['Regular Store','Malayali Store','DMart','Medical Store','Amazon','Flipkart','Blinkit','Myntra','Meesho','Other'];
+const ONLINE_STORES=new Set(['Amazon','Flipkart','Blinkit','Myntra','Meesho']);
+
+let entries=ld(K.E,null);
+if(!entries){entries=[...SEED];sv(K.E,entries);}
+let cats=ld(K.C,DEFAULT_CATS);
+let stores=ld(K.S,DEFAULT_STORES);
+let gistCfg=ld(K.G,{token:'',id:''});
+let shopList=ld(K.SL,[]);   // [{id,item,qty,unit,category,note,done,addedAt}]
+let pantry=ld(K.PT,[]);     // [{id,item,qty,unit,category,addedAt,lastUpdated}]
+
+// ═══════════════════════════════════════════
+// COLORS
+// ═══════════════════════════════════════════
+const CAT_COL={'Grocery':'#4361EE','Household':'#7209B7','Healthcare':'#F72585','Utilities':'#FB8500','Transport':'#4CC9F0','Personal':'#2DC653'};
+const PALETTE=['#4361EE','#7209B7','#F72585','#FB8500','#4CC9F0','#2DC653','#F9A825','#3A0CA3','#B5179E','#560BAD','#06D6A0','#EF476F'];
+const STORE_COL=['#4361EE','#7209B7','#F72585','#FB8500','#4CC9F0','#2DC653','#F9A825','#3A0CA3'];
+
+function catCol(c){return CAT_COL[c]||PALETTE[cats.findIndex(x=>x.name===c)%PALETTE.length]||'#4361EE';}
+function catIcon(c){
+  const x=cats.find(x=>x.name===c);
+  if(!x)return'📌';
+  return renderIcon(x.icon);
+}
+function renderIcon(ic){
+  if(!ic)return'📌';
+  if(ic.startsWith('__img__')){
+    const url=ic.slice(7);
+    return`<img src="${url}" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;border-radius:3px" onerror="this.outerHTML='🖼️'">`;
+  }
+  return ic;
+}
+
+// ═══════════════════════════════════════════
+// FORMAT
+// ═══════════════════════════════════════════
+const fmt=(n,d=0)=>{if(!n&&n!==0)return'0';if(n>=100000)return(n/100000).toFixed(1)+'L';if(n>=1000)return n.toLocaleString('en-IN',{maximumFractionDigits:d});return n.toFixed(d);};
+const fmtF=n=>'₹'+n.toLocaleString('en-IN',{maximumFractionDigits:2});
+const fmtS=n=>'₹'+fmt(n);
+const fmtM=m=>{const[y,mo]=m.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo-1]+' '+y;};
+
+// ═══════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════
+(function tick(){
+  const n=new Date();
+  document.getElementById('clock').textContent=n.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+' | '+n.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+  setTimeout(tick,30000);
+})();
+
+// ═══════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════
+let charts={};
+function go(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));
+  document.getElementById('page-'+id).classList.add('on');
+  if(el)el.classList.add('on');
+  ({dashboard:renderDash,expenses:renderExpenses,entry:renderEntry,report:renderReportPage,pivot:renderPivotPage,txns:renderTxnsPage,lookup:()=>{},manage:renderManage,gist:renderGist,shopping:renderShopPage,pantry:renderPantryPage})[id]?.();
+}
+
+// ═══════════════════════════════════════════
+// CHART FACTORY
+// ═══════════════════════════════════════════
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+const TICKS={color:'#9BA3BF',font:{size:10,family:'Plus Jakarta Sans'}};
+const GRID={color:'rgba(0,0,0,0.04)'};
+const BASE_OPTS={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtF(ctx.raw)}}}};
+
+function moneyAxis(){return{x:{grid:GRID,ticks:TICKS},y:{grid:GRID,ticks:{...TICKS,callback:v=>fmtS(v)}}};}
+function moneyAxisH(){return{x:{grid:GRID,ticks:{...TICKS,callback:v=>fmtS(v)}},y:{grid:GRID,ticks:TICKS}};}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+function renderDash(){
+  const now=new Date();
+  const today=now.toISOString().slice(0,10);
+  const mPfx=today.slice(0,7);
+  const wk=new Date(now);wk.setDate(now.getDate()-((now.getDay()+6)%7));
+  const wkS=wk.toISOString().slice(0,10);
+
+  const todayEs=entries.filter(e=>e.date===today);
+  const mEs=entries.filter(e=>e.date.startsWith(mPfx));
+  const wkEs=entries.filter(e=>e.date>=wkS&&e.date<=today);
+  const total=entries.reduce((s,e)=>s+e.amount,0);
+  const mTot=mEs.reduce((s,e)=>s+e.amount,0);
+  const wkTot=wkEs.reduce((s,e)=>s+e.amount,0);
+  const dAvg=mTot/(now.getDate()||1);
+
+  document.getElementById('dash-stats').innerHTML=[
+    {l:'Total Spend',v:total,ic:'💸',bg:'#EEF1FD',b:'All time'},
+    {l:'This Month',v:mTot,ic:'📅',bg:'#F3E8FF',b:fmtM(mPfx)},
+    {l:'This Week',v:wkTot,ic:'📊',bg:'#EBF9EF',b:mEs.length+' txns'},
+    {l:'Daily Avg',v:dAvg,ic:'⚡',bg:'#FFF8E1',b:'This month'},
+  ].map((s,i)=>`<div class="stat anim" style="animation-delay:${i*.06}s">
+    <div class="stat-icon" style="background:${s.bg}">${s.ic}</div>
+    <div class="stat-lbl">${s.l}</div>
+    <div class="stat-val"><span class="cur">₹</span>${fmt(s.v)}</div>
+    <div class="stat-badge b-n">${s.b}</div>
+  </div>`).join('');
+
+  // Monthly bar
+  const months=[...new Set(entries.map(e=>e.date.slice(0,7)))].sort();
+  const mVals=months.map(m=>entries.filter(e=>e.date.startsWith(m)).reduce((s,e)=>s+e.amount,0));
+  dc('monthly');
+  charts.monthly=new Chart(document.getElementById('c-monthly'),{type:'bar',data:{labels:months.map(fmtM),datasets:[{data:mVals,backgroundColor:months.map((_,i)=>i===months.length-1?'rgba(67,97,238,0.35)':'rgba(67,97,238,0.75)'),borderColor:'#4361EE',borderWidth:2,borderRadius:8,borderSkipped:false}]},options:{...BASE_OPTS,scales:moneyAxis()}});
+
+  // Donut
+  const cm={};entries.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});
+  const cL=Object.keys(cm),cV=cL.map(l=>cm[l]);
+  dc('donut');
+  charts.donut=new Chart(document.getElementById('c-donut'),{type:'doughnut',data:{labels:cL,datasets:[{data:cV,backgroundColor:cL.map(c=>catCol(c)),borderWidth:3,borderColor:'#fff',hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtF(ctx.raw)}}}}});
+  const totC=cV.reduce((a,b)=>a+b,0);
+  document.getElementById('cat-legend').innerHTML=cL.sort((a,b)=>cm[b]-cm[a]).map(c=>`<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid var(--border)">
+    <div style="width:9px;height:9px;border-radius:2px;background:${catCol(c)};flex-shrink:0"></div>
+    <div style="flex:1;font-size:.75rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${catIcon(c)} ${c}</div>
+    <div style="font-size:.75rem;font-weight:700;font-family:var(--font2)">${fmtS(cm[c])}</div>
+  </div>`).join('');
+
+  // Online/Offline bar
+  const onAmt=entries.filter(e=>e.online).reduce((s,e)=>s+e.amount,0);
+  const offAmt=entries.filter(e=>!e.online).reduce((s,e)=>s+e.amount,0);
+  dc('oo');
+  charts.oo=new Chart(document.getElementById('c-oo'),{type:'bar',data:{labels:months.map(fmtM),datasets:[
+    {label:'Online',data:months.map(m=>entries.filter(e=>e.date.startsWith(m)&&e.online).reduce((s,e)=>s+e.amount,0)),backgroundColor:'rgba(67,97,238,0.75)',borderRadius:6,borderSkipped:false},
+    {label:'Offline',data:months.map(m=>entries.filter(e=>e.date.startsWith(m)&&!e.online).reduce((s,e)=>s+e.amount,0)),backgroundColor:'rgba(45,198,83,0.7)',borderRadius:6,borderSkipped:false}
+  ]},options:{...BASE_OPTS,plugins:{legend:{display:true,position:'top',labels:{color:'#5A6282',font:{size:10,family:'Plus Jakarta Sans'},boxWidth:10,padding:8}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmtF(ctx.raw)}}},scales:{...moneyAxis(),x:{...moneyAxis().x,stacked:false}}}});
+
+  // Stores
+  const sm={};entries.forEach(e=>{if(e.store&&e.store!=='Other')sm[e.store]=(sm[e.store]||0)+e.amount;});
+  const sArr=Object.entries(sm).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const mx=sArr[0]?.[1]||1;
+  document.getElementById('store-list').innerHTML=sArr.map(([s,v],i)=>`<div class="store-row">
+    <div class="store-av" style="background:${STORE_COL[i%STORE_COL.length]}">${s[0]}</div>
+    <div style="flex:1;min-width:0">
+      <div class="store-nm">${s}</div>
+      <div class="prog"><div class="prog-f" style="width:${(v/mx*100).toFixed(0)}%;background:${STORE_COL[i%STORE_COL.length]}"></div></div>
+    </div>
+    <div class="store-amt">${fmtS(v)}</div>
+  </div>`).join('');
+
+  // Recent mini
+  const rec=[...entries].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+  document.getElementById('recent-mini').innerHTML=rec.map(e=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
+    <div style="width:28px;height:28px;border-radius:7px;background:${catCol(e.category)}22;display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0">${catIcon(e.category)}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:.75rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.item}</div>
+      <div style="font-size:.6rem;color:var(--t3)">${e.date} · ${e.store||'—'}</div>
+    </div>
+    <div style="font-size:.75rem;font-weight:700;color:var(--red);font-family:var(--font2)">${fmtS(e.amount)}</div>
+  </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// TABLE BUILDER
+// ═══════════════════════════════════════════
+// Price alert: compare this entry's unit price against historical average for same item+unit
+function getPriceAlert(e){
+  if(!e.qty||!parseFloat(e.qty)||!e.unit)return null;
+  const unitPrice=e.amount/parseFloat(e.qty);
+  // find all historical entries for same item with same unit (excluding this entry)
+  const hist=entries.filter(h=>h.id!==e.id&&h.item===e.item&&h.unit===e.unit&&h.qty&&parseFloat(h.qty)>0);
+  if(hist.length<2)return null; // need at least 2 prior to compare
+  const avgUP=hist.reduce((s,h)=>s+(h.amount/parseFloat(h.qty)),0)/hist.length;
+  const diff=((unitPrice-avgUP)/avgUP)*100;
+  if(diff>8)return{cls:'pa-high',icon:'▲ '+Math.round(diff)+'%',title:`₹${unitPrice.toFixed(2)}/${e.unit} vs avg ₹${avgUP.toFixed(2)}/${e.unit}`};
+  if(diff<-8)return{cls:'pa-low',icon:'▼ '+Math.abs(Math.round(diff))+'%',title:`₹${unitPrice.toFixed(2)}/${e.unit} vs avg ₹${avgUP.toFixed(2)}/${e.unit}`};
+  return null;
+}
+
+let sortSt={col:'date',dir:'desc'};
+function buildTable(data,cols,onSort){
+  if(!data.length)return'<div style="padding:20px;text-align:center;color:var(--t3);font-size:.8rem">No data found</div>';
+  const L={date:'Date',item:'Item',category:'Cat',subcat:'Sub-cat',store:'Store',amount:'Amount',qty:'Qty',unit:'Unit',note:'Note',online:'Mode'};
+  return`<table>
+    <thead><tr>${cols.map(c=>`<th onclick="${onSort||''}('${c}')" class="${sortSt.col===c?(sortSt.dir==='asc'?'th-asc':'th-desc'):''}">${L[c]||c}</th>`).join('')}</tr></thead>
+    <tbody>${data.map(e=>`<tr>
+      ${cols.map(c=>{
+        if(c==='amount'){const alert=getPriceAlert(e);return`<td class="n">${fmtF(e[c])}${alert?` <span class="price-alert ${alert.cls}" title="${alert.title}">${alert.icon}</span>`:''}</td>`;}
+        if(c==='category')return`<td><span class="cat-badge" style="background:${catCol(e[c])}18;color:${catCol(e[c])}">${catIcon(e[c])} ${e[c]}</span></td>`;
+        if(c==='online')return`<td><span class="online-badge ${e[c]?'ob-on':'ob-off'}">${e[c]?'📦 Online':'🏪 Offline'}</span></td>`;
+        if(c==='date')return`<td style="color:var(--t2);font-size:.7rem;white-space:nowrap">${e[c]}</td>`;
+        return`<td>${e[c]||'—'}</td>`;
+      }).join('')}
+    </tr>`).join('')}
+    </tbody></table>`;
+}
+
+// ═══════════════════════════════════════════
+// ALL EXPENSES
+// ═══════════════════════════════════════════
+function renderExpenses(){
+  populateFilters('fe-month','fe-cat','fe-sub','fe-store');
+  renderExpTable();
+}
+function populateFilters(mId,cId,sbId,stId){
+  const months=[...new Set(entries.map(e=>e.date.slice(0,7)))].sort().reverse();
+  const mEl=document.getElementById(mId);if(mEl){const c=mEl.value;mEl.innerHTML='<option value="">All Months</option>'+months.map(m=>`<option value="${m}"${m===c?' selected':''}>${fmtM(m)}</option>`).join('');}
+  const cEl=document.getElementById(cId);if(cEl){const c=cEl.value;cEl.innerHTML='<option value="">All Categories</option>'+cats.map(ct=>`<option value="${ct.name}"${ct.name===c?' selected':''}>${ct.icon} ${ct.name}</option>`).join('');}
+  if(sbId){const el=document.getElementById(sbId);if(el){const c=el.value;const subs=[...new Set(entries.map(e=>e.subcat).filter(Boolean))].sort();el.innerHTML='<option value="">All Sub-cats</option>'+subs.map(s=>`<option${s===c?' selected':''}>${s}</option>`).join('');}}
+  if(stId){const el=document.getElementById(stId);if(el){const c=el.value;const sts=[...new Set(entries.map(e=>e.store).filter(Boolean))].sort();el.innerHTML='<option value="">All Stores</option>'+sts.map(s=>`<option${s===c?' selected':''}>${s}</option>`).join('');}}
+}
+function filterEntries(mId,cId,sbId,stId,modeId,qId){
+  let es=[...entries];
+  const m=document.getElementById(mId)?.value;
+  const c=document.getElementById(cId)?.value;
+  const sb=document.getElementById(sbId)?.value;
+  const st=document.getElementById(stId)?.value;
+  const md=document.getElementById(modeId)?.value;
+  const q=document.getElementById(qId)?.value?.toLowerCase().trim();
+  if(m)es=es.filter(e=>e.date.startsWith(m));
+  if(c)es=es.filter(e=>e.category===c);
+  if(sb)es=es.filter(e=>e.subcat===sb);
+  if(st)es=es.filter(e=>e.store===st);
+  if(md==='online')es=es.filter(e=>e.online);
+  if(md==='offline')es=es.filter(e=>!e.online);
+  if(q)es=es.filter(e=>(e.item||'').toLowerCase().includes(q)||(e.note||'').toLowerCase().includes(q));
+  return es;
+}
+function renderExpTable(){
+  let es=filterEntries('fe-month','fe-cat','fe-sub','fe-store','fe-mode','fe-q');
+  const col=sortSt.col,dir=sortSt.dir;
+  es.sort((a,b)=>{const av=a[col]??'',bv=b[col]??'';return col==='amount'?(dir==='asc'?av-bv:bv-av):(dir==='asc'?String(av).localeCompare(String(bv)):String(bv).localeCompare(String(av)));});
+  document.getElementById('exp-count').textContent=es.length+' entries · '+fmtF(es.reduce((s,e)=>s+e.amount,0));
+  document.getElementById('exp-table').innerHTML=buildTable(es,['date','item','category','subcat','store','online','qty','unit','amount'],'sortExpBy');
+}
+function sortExpBy(col){if(sortSt.col===col)sortSt.dir=sortSt.dir==='asc'?'desc':'asc';else{sortSt.col=col;sortSt.dir='desc';}renderExpTable();}
+
+// ═══════════════════════════════════════════
+// ENTRY PAGE
+// ═══════════════════════════════════════════
+let selCat=null,selSub=null,selStore=null,selMode='offline';
+
+function renderEntry(){
+  document.getElementById('e-date').value=new Date().toISOString().slice(0,10);
+  buildChips();renderLog();
+}
+function buildChips(){
+  const cW=document.getElementById('e-cats');cW.innerHTML='';
+  cats.forEach((c,i)=>{const b=document.createElement('button');b.className='chip'+(selCat===i?' sc':'');b.textContent=c.icon+' '+c.name;b.onclick=()=>{selCat=i;selSub=null;buildChips();};cW.appendChild(b);});
+  const sW=document.getElementById('e-subs');sW.innerHTML='';
+  if(selCat===null){sW.innerHTML='<span style="font-size:.7rem;color:var(--t3);font-style:italic">Select a category first</span>';return;}
+  cats[selCat].subs.forEach((s,i)=>{const b=document.createElement('button');b.className='chip'+(selSub===i?' ss':'');b.textContent=s;b.onclick=()=>{selSub=i;buildChips();};sW.appendChild(b);});
+  const stW=document.getElementById('e-stores');stW.innerHTML='';
+  stores.forEach((s,i)=>{const b=document.createElement('button');b.className='chip'+(selStore===i?' sst':'')+(ONLINE_STORES.has(s)?' online-chip':'');b.textContent=s;b.onclick=()=>{selStore=i;if(ONLINE_STORES.has(s))setMode('online');else setMode('offline');buildChips();};stW.appendChild(b);});
+  document.getElementById('mode-online').className='chip'+(selMode==='online'?' sc':'');
+  document.getElementById('mode-offline').className='chip'+(selMode==='offline'?' sc':'');
+  document.getElementById('online-indicator').textContent=selMode==='online'?'📦 This is an ONLINE purchase':'';
+}
+function setMode(m){selMode=m;buildChips();}
+function calcUnit(){
+  const a=parseFloat(document.getElementById('e-amt').value)||0;
+  const q=parseFloat(document.getElementById('e-qty').value)||0;
+  const u=document.getElementById('e-unit').value;
+  document.getElementById('unit-hint').textContent=(a>0&&q>0&&u)?`→ ₹${(a/q).toFixed(2)} per ${u}`:'';
+}
+function showSuggest(){
+  const v=document.getElementById('e-item').value.toLowerCase().trim();
+  const w=document.getElementById('e-suggest');
+  if(v.length<2){w.style.display='none';return;}
+  const seen=new Set();
+  const s=entries.filter(e=>e.item.toLowerCase().includes(v)).map(e=>e.item).filter(i=>!seen.has(i)&&seen.add(i)).slice(0,6);
+  if(!s.length){w.style.display='none';return;}
+  w.style.display='block';
+  w.innerHTML=s.map(x=>`<div style="padding:7px 12px;cursor:pointer;font-size:.77rem;border-bottom:1px solid var(--border)" onmousedown="document.getElementById('e-item').value='${x.replace(/'/g,"\\'")}';document.getElementById('e-suggest').style.display='none'">${x}</div>`).join('');
+}
+function saveEntry(){
+  const amt=parseFloat(document.getElementById('e-amt').value);
+  const item=document.getElementById('e-item').value.trim();
+  if(!amt||amt<=0)return toast('Enter a valid amount','tr');
+  if(!item)return toast('Enter item name','tr');
+  if(selCat===null)return toast('Select a category','tr');
+  const store=selStore!==null?stores[selStore]:'';
+  const e={id:Date.now()+'_'+Math.random().toString(36).slice(2,5),date:document.getElementById('e-date').value,amount:amt,item,category:cats[selCat].name,subcat:selSub!==null?cats[selCat].subs[selSub]:'',store,online:selMode==='online'||ONLINE_STORES.has(store),qty:document.getElementById('e-qty').value||'',unit:document.getElementById('e-unit').value||'',note:document.getElementById('e-note').value.trim()||''};
+  entries.unshift(e);sv(K.E,entries);
+  ['e-amt','e-item','e-note','e-qty'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('e-unit').value='';
+  document.getElementById('unit-hint').textContent='';
+  document.getElementById('e-suggest').style.display='none';
+  renderLog();toast('Entry saved ✓','tg');
+}
+function renderLog(){
+  const d=document.getElementById('e-date').value;
+  document.getElementById('log-date-lbl').textContent=new Date(d).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+  const es=entries.filter(e=>e.date===d);
+  const w=document.getElementById('log-entries');
+  if(!es.length){w.innerHTML='<div style="padding:14px;text-align:center;font-size:.73rem;color:var(--t3)">No entries for this date</div>';document.getElementById('log-tot').textContent='₹0';return;}
+  w.innerHTML=es.map(e=>`<div class="log-item">
+    <div class="log-ic">${catIcon(e.category)}</div>
+    <div><div class="log-nm">${e.item}${e.qty?' · '+e.qty+(e.unit||''):''}</div><div class="log-mt">${e.category}${e.subcat?' / '+e.subcat:''} ${e.online?'· 📦':''}</div></div>
+    <div class="log-amt">${fmtF(e.amount)}</div>
+    <button class="del-btn" onclick="delEntry('${e.id}')">✕</button>
+  </div>`).join('');
+  document.getElementById('log-tot').textContent=fmtF(es.reduce((s,e)=>s+e.amount,0));
+}
+function saveEntryAndAddToPantry(){
+  // Save the entry normally, then also add to pantry
+  const amt=parseFloat(document.getElementById('e-amt').value);
+  const item=document.getElementById('e-item').value.trim();
+  if(!amt||amt<=0)return toast('Enter a valid amount','tr');
+  if(!item)return toast('Enter item name','tr');
+  if(selCat===null)return toast('Select a category','tr');
+  const store=selStore!==null?stores[selStore]:'';
+  const e={id:Date.now()+'_'+Math.random().toString(36).slice(2,5),date:document.getElementById('e-date').value,amount:amt,item,category:cats[selCat].name,subcat:selSub!==null?cats[selCat].subs[selSub]:'',store,online:selMode==='online'||ONLINE_STORES.has(store),qty:document.getElementById('e-qty').value||'',unit:document.getElementById('e-unit').value||'',note:document.getElementById('e-note').value.trim()||''};
+  entries.unshift(e);sv(K.E,entries);
+  // Add to pantry
+  addToPantryDirect({item,qty:e.qty,unit:e.unit,category:cats[selCat].name});
+  ['e-amt','e-item','e-note','e-qty'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('e-unit').value='';document.getElementById('unit-hint').textContent='';
+  document.getElementById('e-suggest').style.display='none';
+  renderLog();toast('Saved + added to pantry ✓','tg');
+}
+function delEntry(id){entries=entries.filter(e=>e.id!=id);sv(K.E,entries);renderLog();toast('Deleted');}
+document.addEventListener('DOMContentLoaded',()=>document.getElementById('e-date')?.addEventListener('change',renderLog));
+
+// ═══════════════════════════════════════════
+// REPORT
+// ═══════════════════════════════════════════
+function renderReportPage(){
+  const months=[...new Set(entries.map(e=>e.date.slice(0,7)))].sort().reverse();
+  const now=new Date().toISOString().slice(0,7);
+  const rM=document.getElementById('r-month');
+  rM.innerHTML=months.map(m=>`<option value="${m}"${m===now?' selected':''}>${fmtM(m)}</option>`).join('');
+  const rC=document.getElementById('r-cat');
+  rC.innerHTML='<option value="">All Categories</option>'+cats.map(c=>`<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
+  renderReport();
+}
+function toggleRType(){
+  const t=document.getElementById('r-type').value;
+  document.getElementById('r-month-w').style.display=t==='month'?'':'none';
+  document.getElementById('r-range-w').style.display=t==='range'?'flex':'none';
+}
+function getRepEs(){
+  const t=document.getElementById('r-type').value;
+  const cF=document.getElementById('r-cat').value;
+  let es=entries;
+  if(t==='month'){const m=document.getElementById('r-month').value;if(m)es=es.filter(e=>e.date.startsWith(m));}
+  else if(t==='range'){const f=document.getElementById('r-from').value,to=document.getElementById('r-to').value;if(f)es=es.filter(e=>e.date>=f);if(to)es=es.filter(e=>e.date<=to);}
+  if(cF)es=es.filter(e=>e.category===cF);
+  return es;
+}
+function renderReport(){
+  const es=getRepEs();
+  const total=es.reduce((s,e)=>s+e.amount,0);
+  const byDate={};es.forEach(e=>{byDate[e.date]=(byDate[e.date]||0)+e.amount;});
+  const days=Object.keys(byDate).length||1;
+  const topCat=Object.entries(es.reduce((m,e)=>{m[e.category]=(m[e.category]||0)+e.amount;return m;},{})).sort((a,b)=>b[1]-a[1])[0];
+  const onTot=es.filter(e=>e.online).reduce((s,e)=>s+e.amount,0);
+  const offTot=es.filter(e=>!e.online).reduce((s,e)=>s+e.amount,0);
+
+  // KPIs
+  document.getElementById('r-sum').innerHTML=[
+    {l:'Total Spend',v:fmtF(total)},
+    {l:'Transactions',v:es.length},
+    {l:'Days Active',v:days},
+    {l:'Daily Avg',v:fmtF(total/days)},
+    {l:'Top Category',v:topCat?`${catIcon(topCat[0])} ${topCat[0]}`:'—'},
+  ].map(s=>`<div class="rsm"><div class="rsm-lbl">${s.l}</div><div class="rsm-val">${s.v}</div></div>`).join('');
+
+  // Online / Offline / Other breakdown
+  document.getElementById('r-oo').innerHTML=`
+    <div class="oo-card oo-online">
+      <div class="oo-lbl" style="color:var(--accent)">📦 Online</div>
+      <div class="oo-val" style="color:var(--accent)">${fmtF(onTot)}</div>
+      <div class="oo-pct" style="color:var(--accent)">${total?((onTot/total)*100).toFixed(1)+'%':0}</div>
+      <div style="font-size:.65rem;color:var(--t3);margin-top:4px">${es.filter(e=>e.online).length} transactions</div>
+    </div>
+    <div class="oo-card oo-offline">
+      <div class="oo-lbl" style="color:var(--green)">🏪 Offline</div>
+      <div class="oo-val" style="color:var(--green)">${fmtF(offTot)}</div>
+      <div class="oo-pct" style="color:var(--green)">${total?((offTot/total)*100).toFixed(1)+'%':0}</div>
+      <div style="font-size:.65rem;color:var(--t3);margin-top:4px">${es.filter(e=>!e.online).length} transactions</div>
+    </div>
+    <div class="oo-card oo-other">
+      <div class="oo-lbl" style="color:var(--orange)">📊 Ratio</div>
+      <div class="oo-val" style="color:var(--orange)">${total?Math.round((offTot/total)*100):0}% offline</div>
+      <div class="oo-pct" style="color:var(--orange)">Avg online: ${fmtF(es.filter(e=>e.online).length?onTot/es.filter(e=>e.online).length:0)}</div>
+      <div style="font-size:.65rem;color:var(--t3);margin-top:4px">Avg offline: ${fmtF(es.filter(e=>!e.online).length?offTot/es.filter(e=>!e.online).length:0)}</div>
+    </div>`;
+
+  // Cat pie
+  const cm={};es.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});
+  const cL=Object.keys(cm),cV=cL.map(l=>cm[l]);
+  dc('rccat');
+  charts.rccat=new Chart(document.getElementById('rc-cat'),{type:'pie',data:{labels:cL,datasets:[{data:cV,backgroundColor:cL.map(c=>catCol(c)),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#5A6282',font:{size:10,family:'Plus Jakarta Sans'},padding:6,boxWidth:10}},tooltip:{callbacks:{label:ctx=>fmtF(ctx.raw)+' ('+((ctx.raw/cV.reduce((a,b)=>a+b,0))*100).toFixed(1)+'%)'}}}}});
+
+  // Daily line
+  const allD=[...new Set(es.map(e=>e.date))].sort();
+  dc('rcdaily');
+  charts.rcdaily=new Chart(document.getElementById('rc-daily'),{type:'line',data:{labels:allD.map(d=>d.slice(5)),datasets:[{label:'Spend',data:allD.map(d=>byDate[d]||0),borderColor:'#4361EE',backgroundColor:'rgba(67,97,238,.08)',fill:true,tension:.3,pointRadius:3,pointBackgroundColor:'#4361EE'}]},options:{...BASE_OPTS,scales:moneyAxis()}});
+
+  // Sub-cat horizontal bar
+  const sm={};es.forEach(e=>{if(e.subcat)sm[e.subcat]=(sm[e.subcat]||0)+e.amount;});
+  const sSorted=Object.entries(sm).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  dc('rcsub');
+  charts.rcsub=new Chart(document.getElementById('rc-sub'),{type:'bar',data:{labels:sSorted.map(x=>x[0]),datasets:[{data:sSorted.map(x=>x[1]),backgroundColor:PALETTE,borderRadius:5}]},options:{indexAxis:'y',...BASE_OPTS,scales:moneyAxisH()}});
+
+  // Store horizontal bar
+  const stm={};es.forEach(e=>{if(e.store)stm[e.store]=(stm[e.store]||0)+e.amount;});
+  const stSorted=Object.entries(stm).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  dc('rcstore');
+  charts.rcstore=new Chart(document.getElementById('rc-store'),{type:'bar',data:{labels:stSorted.map(x=>x[0]),datasets:[{data:stSorted.map(x=>x[1]),backgroundColor:STORE_COL,borderRadius:5}]},options:{indexAxis:'y',...BASE_OPTS,scales:moneyAxisH()}});
+
+  // Per-Category Subcat tables
+  const byCat={};
+  es.forEach(e=>{if(!byCat[e.category])byCat[e.category]={};byCat[e.category][e.subcat||'Other']=(byCat[e.category][e.subcat||'Other']||0)+e.amount;});
+  document.getElementById('r-subcat-tables').innerHTML=Object.entries(byCat).sort((a,b)=>Object.values(b[1]).reduce((s,v)=>s+v,0)-Object.values(a[1]).reduce((s,v)=>s+v,0)).map(([cat,subs])=>{
+    const catTot=Object.values(subs).reduce((s,v)=>s+v,0);
+    const rows=Object.entries(subs).sort((a,b)=>b[1]-a[1]);
+    return`<div class="subcat-section">
+      <div class="subcat-section-title" style="color:${catCol(cat)}">${catIcon(cat)} ${cat} — ${fmtF(catTot)}</div>
+      <table style="width:100%"><thead><tr>
+        <th style="font-size:.58rem;text-align:left;padding:5px 8px;color:var(--t3)">Sub-category</th>
+        <th style="font-size:.58rem;text-align:right;padding:5px 8px;color:var(--t3)">Amount</th>
+        <th style="font-size:.58rem;text-align:right;padding:5px 8px;color:var(--t3)">%</th>
+        <th style="padding:5px 8px">Share</th>
+      </tr></thead><tbody>
+      ${rows.map(([sub,amt])=>{const pct=(amt/catTot*100).toFixed(1);return`<tr>
+        <td style="padding:5px 8px;font-size:.78rem;font-weight:600">${sub}</td>
+        <td style="padding:5px 8px;font-family:var(--font2);text-align:right;font-size:.78rem;font-weight:700">${fmtF(amt)}</td>
+        <td style="padding:5px 8px;text-align:right;font-size:.72rem;color:var(--t2)">${pct}%</td>
+        <td style="padding:5px 8px"><div class="prog"><div class="prog-f" style="width:${pct}%;background:${catCol(cat)}"></div></div></td>
+      </tr>`;}).join('')}
+      </tbody></table>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// PIVOT
+// ═══════════════════════════════════════════
+let pgr='category',pSort={col:'total',dir:'desc'};
+function renderPivotPage(){
+  populateFilters('p-month','p-cat',null,null);
+  renderPivot();
+}
+function setPG(btn,g){document.querySelectorAll('[data-g]').forEach(b=>b.className='chip');btn.className='chip sc';pgr=g;renderPivot();}
+function renderPivot(){
+  const mF=document.getElementById('p-month')?.value||'';
+  const cF=document.getElementById('p-cat')?.value||'';
+  const md=document.getElementById('p-mode')?.value||'';
+  let es=entries;
+  if(mF)es=es.filter(e=>e.date.startsWith(mF));
+  if(cF)es=es.filter(e=>e.category===cF);
+  if(md==='online')es=es.filter(e=>e.online);
+  if(md==='offline')es=es.filter(e=>!e.online);
+  const map={};
+  es.forEach(e=>{const k=e[pgr]||'(blank)';if(!map[k])map[k]={key:k,total:0,count:0,online:0,offline:0};map[k].total+=e.amount;map[k].count++;if(e.online)map[k].online+=e.amount;else map[k].offline+=e.amount;});
+  let rows=Object.values(map);
+  rows.sort((a,b)=>pSort.dir==='asc'?a[pSort.col]-b[pSort.col]:b[pSort.col]-a[pSort.col]);
+  const grand=rows.reduce((s,r)=>s+r.total,0);
+  function th(c,l){const a=pSort.col===c;return`<th onclick="setPSort('${c}')" style="cursor:pointer;${a?'color:var(--accent);':''}" class="${a?(pSort.dir==='asc'?'th-asc':'th-desc'):''}">${l}</th>`;}
+  document.getElementById('pivot-wrap').innerHTML=`<table>
+    <thead><tr>${th('key',pgr[0].toUpperCase()+pgr.slice(1))}${th('total','Total')}${th('count','Count')}<th style="text-align:right">Avg/Txn</th>${th('online','Online')}${th('offline','Offline')}<th style="text-align:right">%</th><th>Share</th></tr></thead>
+    <tbody>${rows.map(r=>{const pct=(r.total/grand*100).toFixed(1);return`<tr>
+      <td>${pgr==='category'?catIcon(r.key)+' ':''}<strong>${r.key}</strong></td>
+      <td class="n">${fmtF(r.total)}</td>
+      <td class="n" style="color:var(--t2)">${r.count}</td>
+      <td class="n" style="color:var(--t2)">${fmtF(r.total/r.count)}</td>
+      <td class="n" style="color:var(--accent)">${fmtF(r.online)}</td>
+      <td class="n" style="color:var(--green)">${fmtF(r.offline)}</td>
+      <td class="n" style="color:var(--t2)">${pct}%</td>
+      <td><div class="prog"><div class="prog-f" style="width:${pct}%;background:${pgr==='category'?catCol(r.key):'#4361EE'}"></div></div></td>
+    </tr>`;}).join('')}
+    <tr style="border-top:2px solid var(--border2)">
+      <td style="font-weight:800">Grand Total</td>
+      <td class="n" style="color:var(--accent);font-weight:800">${fmtF(grand)}</td>
+      <td class="n" style="color:var(--t2)">${rows.reduce((s,r)=>s+r.count,0)}</td>
+      <td colspan="5"></td>
+    </tr></tbody></table>`;
+}
+function setPSort(c){if(pSort.col===c)pSort.dir=pSort.dir==='asc'?'desc':'asc';else{pSort.col=c;pSort.dir='desc';}renderPivot();}
+
+// ═══════════════════════════════════════════
+// DETAILED TRANSACTIONS TAB
+// ═══════════════════════════════════════════
+let txSort={col:'date',dir:'desc'};
+function renderTxnsPage(){
+  populateFilters('tx-month','tx-cat','tx-sub','tx-store');
+  renderTxns();
+}
+function renderTxns(){
+  let es=filterEntries('tx-month','tx-cat','tx-sub','tx-store','tx-mode','tx-q');
+  es.sort((a,b)=>{const av=a[txSort.col]??'',bv=b[txSort.col]??'';return txSort.col==='amount'?(txSort.dir==='asc'?av-bv:bv-av):(txSort.dir==='asc'?String(av).localeCompare(String(bv)):String(bv).localeCompare(String(av)));});
+  document.getElementById('tx-count').textContent=es.length+' entries · '+fmtF(es.reduce((s,e)=>s+e.amount,0));
+  document.getElementById('tx-table').innerHTML=buildTable(es,['date','item','category','subcat','store','online','qty','unit','amount'],'sortTxBy');
+}
+function sortTxBy(c){if(txSort.col===c)txSort.dir=txSort.dir==='asc'?'desc':'asc';else{txSort.col=c;txSort.dir='desc';}renderTxns();}
+
+// ═══════════════════════════════════════════
+// ITEM LOOKUP
+// ═══════════════════════════════════════════
+function doLookup(){
+  const term=document.getElementById('lk-item').value.trim().toLowerCase();
+  const per=document.getElementById('lk-period').value;
+  if(!term)return toast('Enter an item','tr');
+  const now=new Date();
+  let es=entries.filter(e=>e.item.toLowerCase().includes(term));
+  if(per==='month')es=es.filter(e=>e.date.startsWith(now.toISOString().slice(0,7)));
+  else if(per==='3m'){const p=new Date(now);p.setMonth(p.getMonth()-3);es=es.filter(e=>new Date(e.date)>=p);}
+  else if(per==='year')es=es.filter(e=>e.date.startsWith(''+now.getFullYear()));
+  if(!es.length){document.getElementById('lk-result').innerHTML='<div style="padding:20px;text-align:center;color:var(--t3)">No results found</div>';return;}
+  const tot=es.reduce((s,e)=>s+e.amount,0);
+  const qm={};es.forEach(e=>{if(e.qty&&e.unit){qm[e.unit]=(qm[e.unit]||0)+parseFloat(e.qty||0);}});
+  const qStr=Object.entries(qm).map(([u,q])=>q.toFixed(2)+' '+u).join(' + ')||'—';
+  const wQ=es.filter(e=>e.qty&&parseFloat(e.qty)>0);
+  const avgP=wQ.length?wQ.reduce((s,e)=>s+(e.amount/parseFloat(e.qty)),0)/wQ.length:0;
+  const onAmt=es.filter(e=>e.online).reduce((s,e)=>s+e.amount,0);
+  document.getElementById('lk-result').innerHTML=`<div class="card">
+    <div class="card-hd"><div class="card-title">Results for "<span style="color:var(--accent)">${term}</span>"</div><div style="font-size:.7rem;color:var(--t3)">${es.length} entries</div></div>
+    <div class="ls-grid">
+      <div class="ls-item"><div class="ls-val">${fmtF(tot)}</div><div class="ls-lbl">Total Spent</div></div>
+      <div class="ls-item"><div class="ls-val">${es.length}</div><div class="ls-lbl">Purchases</div></div>
+      <div class="ls-item"><div class="ls-val">${qStr}</div><div class="ls-lbl">Total Qty</div></div>
+      <div class="ls-item"><div class="ls-val">${avgP?'₹'+avgP.toFixed(2)+'/unit':'—'}</div><div class="ls-lbl">Avg Unit Price</div></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <span class="online-badge ob-on">📦 Online: ${fmtF(onAmt)}</span>
+      <span class="online-badge ob-off">🏪 Offline: ${fmtF(tot-onAmt)}</span>
+    </div>
+    <div class="tbl-wrap">${buildTable(es.sort((a,b)=>new Date(b.date)-new Date(a.date)),['date','item','category','subcat','store','online','qty','unit','amount'],'')}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// MANAGE
+// ═══════════════════════════════════════════
+function renderManage(){
+  document.getElementById('data-cnt').textContent=entries.length;
+  document.getElementById('data-last').textContent=entries[0]?.date||'—';
+  renderManageCats();
+  renderManageStores();
+}
+function renderManageCats(){
+  document.getElementById('manage-cats').innerHTML=cats.map((c,ci)=>`
+    <div class="cat-manage-row">
+      <div class="cat-manage-hd">
+        <span class="cat-manage-ic" onclick="openIconPicker(${ci},event)" title="Click to change icon">${c.icon}</span>
+        <span class="cat-manage-nm">${c.name}</span>
+        <button class="del-btn" onclick="delCat(${ci})">✕</button>
+      </div>
+      <div class="cat-manage-body">
+        ${c.subs.map((s,si)=>`<span class="sub-tag">${s} <button class="del-btn" onclick="delSub(${ci},${si})" style="font-size:.6rem">×</button></span>`).join('')}
+        <input type="text" class="fi" id="sub-in-${ci}" placeholder="+ add sub" style="width:130px;padding:3px 8px;font-size:.7rem" onkeydown="if(event.key==='Enter')addSub(${ci})">
+        <button class="abtn sm" onclick="addSub(${ci})">+</button>
+      </div>
+    </div>`).join('');
+}
+function renderManageStores(){
+  document.getElementById('manage-stores').innerHTML=stores.map((s,i)=>`
+    <span class="sub-tag ${ONLINE_STORES.has(s)?'online-chip':''}">${s}${ONLINE_STORES.has(s)?' 📦':''} <button class="del-btn" onclick="delStore(${i})" style="font-size:.6rem">✕</button></span>`).join('');
+}
+function addCat(){
+  const icon=document.getElementById('nc-icon').value.trim()||'📌';
+  const name=document.getElementById('nc-name').value.trim();
+  if(!name)return toast('Enter a name','tr');
+  cats.push({name,icon,subs:[]});sv(K.C,cats);
+  document.getElementById('nc-icon').value='';document.getElementById('nc-name').value='';
+  renderManageCats();buildChips();toast('Added','tg');
+}
+function delCat(i){cats.splice(i,1);sv(K.C,cats);renderManageCats();buildChips();}
+function addSub(ci){const v=document.getElementById('sub-in-'+ci)?.value.trim();if(!v)return;cats[ci].subs.push(v);sv(K.C,cats);renderManageCats();buildChips();}
+function delSub(ci,si){cats[ci].subs.splice(si,1);sv(K.C,cats);renderManageCats();}
+function addStore(){const v=document.getElementById('ns-name').value.trim();if(!v)return toast('Enter name','tr');stores.push(v);sv(K.S,stores);document.getElementById('ns-name').value='';renderManageStores();buildChips();toast('Added','tg');}
+function delStore(i){stores.splice(i,1);sv(K.S,stores);renderManageStores();buildChips();}
+
+// ═══════════════════════════════════════════
+// ICON PICKER
+// ═══════════════════════════════════════════
+const ALL_ICONS=['🛒','🏠','💊','⚡','🚗','👤','🍕','🌿','🐟','🥛','🧹','👗','🎓','✈️','🎁','💻','📱','🏋️','🐄','🧴','🍎','🫙','☕','🎂','🏥','⛽','💈','🥩','🥦','🧅','🍌','🥥','🌶️','🧂','🍜','🥚','🍞','🎵','🏦','💰','📚','🎮','🛁','🪴','🔧','🚿','🎉','🕯️','⛪','🚌','🏍️','🅿️','🛵','🚲','💄','🧣','👒','🩺','💉','🩹','🏡','💡','📺','🧊','🪣','🫧','🧽','🪥','🪒','🫀','🌸','🌻','🍃','🌊','☀️','🌙','⭐','🔥','💧','❄️','🎯','🎪','🏖️','⛰️','🏔️'];
+let ipCatIdx=null;
+
+function openIconPicker(ci,event){
+  ipCatIdx=ci;
+  const picker=document.getElementById('icon-picker');
+  picker.style.display='block';
+  const rect=event.target.getBoundingClientRect();
+  picker.style.left=(rect.left)+'px';
+  picker.style.top=(rect.bottom+6)+'px';
+  document.getElementById('ip-q').value='';
+  filterIcons();
+  setTimeout(()=>document.addEventListener('click',closePickerOutside),0);
+}
+function closePickerOutside(e){if(!document.getElementById('icon-picker').contains(e)){document.getElementById('icon-picker').style.display='none';ipCatIdx=null;document.removeEventListener('click',closePickerOutside);}}
+function filterIcons(){
+  const q=document.getElementById('ip-q').value.toLowerCase();
+  const grid=document.getElementById('ip-grid');
+  const cur=ipCatIdx!==null?cats[ipCatIdx].icon:'';
+  // Filter by text in emoji name if searchable, else show all
+  const filtered=q?ALL_ICONS.filter(ic=>ic.toLowerCase().includes(q)):ALL_ICONS;
+  grid.innerHTML=(filtered.length?filtered:ALL_ICONS).map(ic=>`<div class="ip-ic${ic===cur?' sel':''}" onclick="selectIcon('${ic}')" title="${ic}">${ic}</div>`).join('');
+}
+function selectIcon(ic){
+  if(ipCatIdx===null)return;
+  applyIconToCategory(ic);
+}
+function applyIconToCategory(ic){
+  if(ipCatIdx===null)return;
+  cats[ipCatIdx].icon=ic;sv(K.C,cats);
+  document.getElementById('icon-picker').style.display='none';
+  ipCatIdx=null;
+  renderManageCats();buildChips();
+  document.removeEventListener('click',closePickerOutside);
+}
+function switchIpTab(tab){
+  document.getElementById('ip-tab-emoji').className='ip-tab'+(tab==='emoji'?' on':'');
+  document.getElementById('ip-tab-url').className='ip-tab'+(tab==='url'?' on':'');
+  document.getElementById('ip-emoji-panel').style.display=tab==='emoji'?'':'none';
+  document.getElementById('ip-url-panel').style.display=tab==='url'?'':'none';
+}
+function previewIconUrl(){
+  const url=document.getElementById('ip-url').value.trim();
+  const prev=document.getElementById('ip-url-preview');
+  if(!url){prev.innerHTML='?';return;}
+  // Check if it's a URL
+  if(url.startsWith('http')){
+    prev.innerHTML=`<img src="${url}" onerror="this.parentElement.textContent='❌'">`;
+  } else {
+    // treat as emoji/text
+    prev.textContent=url.slice(0,2);
+  }
+}
+function applyIconUrl(){
+  const url=document.getElementById('ip-url').value.trim();
+  if(!url)return toast('Enter a URL or emoji','tr');
+  // If it's an img URL, store as <img> marker
+  const ic=url.startsWith('http')?`__img__${url}`:url.slice(0,2);
+  applyIconToCategory(ic);
+}
+
+// ═══════════════════════════════════════════
+// GIST SYNC
+// ═══════════════════════════════════════════
+function renderGist(){
+  document.getElementById('g-token').value=gistCfg.token||'';
+  document.getElementById('g-id').value=gistCfg.id||'';
+  updateGistTop();
+}
+function saveGistConfig(){
+  gistCfg.token=document.getElementById('g-token').value.trim();
+  gistCfg.id=document.getElementById('g-id').value.trim();
+  sv(K.G,gistCfg);toast('Config saved','tg');
+}
+function gistLog(msg){const el=document.getElementById('gist-log');el.textContent=(el.textContent?el.textContent+'\n':'')+new Date().toLocaleTimeString()+' — '+msg;}
+function updateGistTop(){
+  const dot=document.getElementById('gist-dot-top');
+  const lbl=document.getElementById('gist-top-lbl');
+  const ls=ld('kh3_gist_last',null);
+  if(ls){dot.className='gist-dot ok';lbl.textContent='Synced '+new Date(ls).toLocaleTimeString();}
+  else{dot.className='gist-dot';lbl.textContent='Not synced';}
+}
+async function gistPush(){
+  saveGistConfig();
+  const token=gistCfg.token;
+  if(!token){gistLog('❌ No token set');return toast('Set your GitHub token','tr');}
+  const dot=document.getElementById('gist-dot-top');dot.className='gist-dot syncing';
+  gistLog('⬆ Pushing data…');
+  const payload={entries,cats,stores,shopList,pantry,pushedAt:new Date().toISOString()};
+  const body={description:'Kharch Expense Data',public:false,files:{'kharch-data.json':{content:JSON.stringify(payload,null,2)}}};
+  try{
+    const url=gistCfg.id?`https://api.github.com/gists/${gistCfg.id}`:'https://api.github.com/gists';
+    const method=gistCfg.id?'PATCH':'POST';
+    const res=await fetch(url,{method,headers:{'Authorization':'token '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await res.json();
+    if(data.id){gistCfg.id=data.id;sv(K.G,gistCfg);document.getElementById('g-id').value=data.id;sv('kh3_gist_last',Date.now());updateGistTop();gistLog('✅ Pushed! Gist ID: '+data.id);toast('Pushed to Gist ✓','tg');}
+    else{gistLog('❌ Error: '+(data.message||JSON.stringify(data)));toast('Push failed','tr');dot.className='gist-dot err';}
+  }catch(e){gistLog('❌ Network error: '+e.message);toast('Network error','tr');dot.className='gist-dot err';}
+}
+async function gistPull(){
+  saveGistConfig();
+  const token=gistCfg.token,id=gistCfg.id;
+  if(!token||!id){gistLog('❌ Token and Gist ID required');return toast('Set token + Gist ID','tr');}
+  const dot=document.getElementById('gist-dot-top');dot.className='gist-dot syncing';
+  gistLog('⬇ Pulling data…');
+  try{
+    const res=await fetch(`https://api.github.com/gists/${id}`,{headers:{'Authorization':'token '+token}});
+    const data=await res.json();
+    const fileContent=data.files?.['kharch-data.json']?.content;
+    if(!fileContent){gistLog('❌ File not found in Gist');return toast('File not found','tr');}
+    const payload=JSON.parse(fileContent);
+    if(payload.entries){entries=payload.entries;sv(K.E,entries);}
+    if(payload.cats){cats=payload.cats;sv(K.C,cats);}
+    if(payload.stores){stores=payload.stores;sv(K.S,stores);}
+    if(payload.shopList){shopList=payload.shopList;sv(K.SL,shopList);}
+    if(payload.pantry){pantry=payload.pantry;sv(K.PT,pantry);}
+    sv('kh3_gist_last',Date.now());updateGistTop();
+    gistLog('✅ Pulled! '+entries.length+' entries, pushed at: '+(payload.pushedAt||'?'));
+    toast('Pulled from Gist ✓','tg');dot.className='gist-dot ok';
+    renderDash();
+  }catch(e){gistLog('❌ Error: '+e.message);toast('Pull failed','tr');dot.className='gist-dot err';}
+}
+
+// ═══════════════════════════════════════════
+// IMPORT / EXPORT
+// ═══════════════════════════════════════════
+function exportJSON(){const b={version:4,exported:new Date().toISOString(),entries,cats,stores,shopList,pantry};dl('kharch-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(b,null,2),'application/json');toast('Exported','tg');}
+function exportCSV(){
+  if(!entries.length)return toast('No entries','tr');
+  const h=['date','amount','item','category','subcat','store','online','qty','unit','note'];
+  const rows=entries.map(e=>h.map(k=>{const v=String(e[k]??'');return v.includes(',')?`"${v}"`:v;}).join(','));
+  dl('kharch-'+new Date().toISOString().slice(0,10)+'.csv',[h.join(','),...rows].join('\n'),'text/csv');
+  toast('CSV exported','tg');
+}
+function handleImport(input){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.entries){const ex=new Set(entries.map(e=>e.id));const nw=d.entries.filter(ne=>!ex.has(ne.id));entries=[...entries,...nw];sv(K.E,entries);}if(d.cats){cats=d.cats;sv(K.C,cats);}if(d.stores){stores=d.stores;sv(K.S,stores);}renderDash();toast('Imported '+entries.length+' entries','tg');}catch{toast('Invalid file','tr');}};
+  r.readAsText(f);input.value='';
+}
+function dl(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();}
+function showExport(){document.getElementById('exp-overlay').classList.add('open');}
+function closeExport(){document.getElementById('exp-overlay').classList.remove('open');}
+function confirmClear(){document.getElementById('c-title').textContent='Clear all entries?';document.getElementById('c-msg').textContent='This will delete all '+entries.length+' entries permanently.';document.getElementById('c-ok').onclick=()=>{entries=[];sv(K.E,entries);closeConfirm();renderManage();renderDash();toast('Cleared');};document.getElementById('confirm-overlay').classList.add('open');}
+function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('open');}
+
+
+// ═══════════════════════════════════════════
+// SHOPPING LIST
+// ═══════════════════════════════════════════
+const QUICK_ITEMS=['Milk','Vegetables','Eggs','Bread','Onion','Tomato','Rice','Sugar','Oil','Curd','Coconut','Fish','Chicken','Dal','Flour'];
+
+function renderShopPage(){
+  populateShopCatFilters();
+  renderQuickAdd();
+  renderShopList();
+  renderShopSummary();
+}
+function populateShopCatFilters(){
+  const opts='<option value="">Category</option>'+cats.map(c=>`<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
+  ['sl-cat','sl-filter-cat'].forEach(id=>{const el=document.getElementById(id);if(el){const v=el.value;el.innerHTML=opts;el.value=v;}});
+}
+function renderQuickAdd(){
+  document.getElementById('sl-quick').innerHTML=QUICK_ITEMS.map(i=>`<button class="chip" onclick="quickAdd('${i}')">${i}</button>`).join('');
+}
+function quickAdd(item){
+  document.getElementById('sl-item').value=item;
+  document.getElementById('sl-item').focus();
+}
+function addShopItem(){
+  const item=document.getElementById('sl-item').value.trim();
+  if(!item)return toast('Enter item name','tr');
+  const entry={id:Date.now()+'_sl',item,qty:document.getElementById('sl-qty').value||'',unit:document.getElementById('sl-unit').value||'',category:document.getElementById('sl-cat').value||'',note:document.getElementById('sl-note').value.trim()||'',done:false,addedAt:new Date().toISOString()};
+  shopList.unshift(entry);sv(K.SL,shopList);
+  ['sl-item','sl-qty','sl-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sl-unit').value='';
+  document.getElementById('sl-cat').value='';
+  renderShopList();renderShopSummary();toast('Added to list','tg');
+}
+function toggleShopDone(id){
+  const i=shopList.findIndex(x=>x.id===id);
+  if(i<0)return;
+  shopList[i].done=!shopList[i].done;
+  sv(K.SL,shopList);renderShopList();renderShopSummary();
+}
+function delShopItem(id){shopList=shopList.filter(x=>x.id!==id);sv(K.SL,shopList);renderShopList();renderShopSummary();}
+function moveShopToPantry(id){
+  const item=shopList.find(x=>x.id===id);
+  if(!item)return;
+  addToPantryDirect(item);
+  shopList=shopList.filter(x=>x.id!==id);
+  sv(K.SL,shopList);renderShopList();renderShopSummary();
+  toast(item.item+' added to pantry ✓','tg');
+}
+function addAllDoneToPantry(){
+  const done=shopList.filter(x=>x.done);
+  if(!done.length)return toast('No done items to move','tr');
+  done.forEach(x=>{addToPantryDirect(x);});
+  shopList=shopList.filter(x=>!x.done);
+  sv(K.SL,shopList);renderShopList();renderShopSummary();
+  renderPantry();
+  toast(done.length+' items moved to pantry ✓','tg');
+}
+function clearDoneItems(){
+  shopList=shopList.filter(x=>!x.done);sv(K.SL,shopList);renderShopList();renderShopSummary();toast('Done items cleared');
+}
+function renderShopList(){
+  const catF=document.getElementById('sl-filter-cat')?.value||'';
+  let items=shopList;
+  if(catF)items=items.filter(x=>x.category===catF);
+  // Sort: undone first, done last
+  items=[...items].sort((a,b)=>(a.done?1:0)-(b.done?1:0));
+  const w=document.getElementById('shop-list');
+  if(!items.length){w.innerHTML='<div style="padding:20px;text-align:center;color:var(--t3);font-size:.8rem">List is empty — add items above</div>';return;}
+  w.innerHTML=items.map(x=>`<div class="shop-item${x.done?' done':''}">
+    <input type="checkbox" class="si-cb" ${x.done?'checked':''} onchange="toggleShopDone('${x.id}')">
+    <div>
+      <div class="si-name">${x.item}${x.qty?' — '+x.qty+(x.unit||''):''}</div>
+      <div class="si-meta">${x.category?renderIcon(catIcon(x.category))+' '+x.category:''}${x.note?' · '+x.note:''}</div>
+    </div>
+    <span class="si-badge ${x.done?'b-g':'b-n'}">${x.done?'✓ Got it':'Pending'}</span>
+    <div class="si-actions">
+      <button class="si-btn green" onclick="moveShopToPantry('${x.id}')" title="Move to pantry">→ Pantry</button>
+      <button class="si-btn red del-btn" onclick="delShopItem('${x.id}')">✕</button>
+    </div>
+  </div>`).join('');
+}
+function renderShopSummary(){
+  const total=shopList.length,done=shopList.filter(x=>x.done).length;
+  document.getElementById('sl-summary').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div style="text-align:center;padding:10px;background:var(--bg);border-radius:var(--rs)"><div style="font-size:1.2rem;font-weight:800">${total}</div><div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--t3)">Total Items</div></div>
+      <div style="text-align:center;padding:10px;background:var(--green-bg);border-radius:var(--rs)"><div style="font-size:1.2rem;font-weight:800;color:var(--green)">${done}</div><div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--t3)">Got</div></div>
+      <div style="text-align:center;padding:10px;background:var(--red-bg);border-radius:var(--rs)"><div style="font-size:1.2rem;font-weight:800;color:var(--red)">${total-done}</div><div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--t3)">Remaining</div></div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════
+// PANTRY
+// ═══════════════════════════════════════════
+function addToPantryDirect(shopItem){
+  // Check if item already exists in pantry
+  const existing=pantry.find(p=>p.item.toLowerCase()===shopItem.item.toLowerCase()&&p.unit===shopItem.unit);
+  if(existing&&shopItem.qty&&parseFloat(shopItem.qty)>0){
+    existing.qty=((parseFloat(existing.qty)||0)+(parseFloat(shopItem.qty)||0)).toString();
+    existing.lastUpdated=new Date().toISOString();
+  } else {
+    pantry.unshift({id:Date.now()+'_pt',item:shopItem.item,qty:shopItem.qty||'',unit:shopItem.unit||'',category:shopItem.category||'',addedAt:new Date().toISOString(),lastUpdated:new Date().toISOString()});
+  }
+  sv(K.PT,pantry);
+}
+function renderPantryPage(){
+  populatePantryCatFilters();
+  renderPantry();
+  renderPantrySummary();
+}
+function populatePantryCatFilters(){
+  const opts='<option value="">All Categories</option>'+cats.map(c=>`<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
+  ['pt-cat','pt-filter-cat'].forEach(id=>{const el=document.getElementById(id);if(el){const v=el.value;el.innerHTML=opts;el.value=v;}});
+}
+function addPantryItem(){
+  const item=document.getElementById('pt-item').value.trim();
+  if(!item)return toast('Enter item name','tr');
+  addToPantryDirect({item,qty:document.getElementById('pt-qty').value||'',unit:document.getElementById('pt-unit').value||'',category:document.getElementById('pt-cat').value||''});
+  ['pt-item','pt-qty'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pt-unit').value='';
+  document.getElementById('pt-cat').value='';
+  renderPantry();renderPantrySummary();toast('Added to pantry','tg');
+}
+function adjustPantryQty(id,delta){
+  const p=pantry.find(x=>x.id===id);
+  if(!p)return;
+  const cur=parseFloat(p.qty)||0;
+  const newQ=Math.max(0,cur+delta);
+  p.qty=newQ.toString();p.lastUpdated=new Date().toISOString();
+  sv(K.PT,pantry);renderPantry();renderPantrySummary();
+}
+function setPantryQty(id,val){
+  const p=pantry.find(x=>x.id===id);
+  if(!p)return;
+  p.qty=Math.max(0,parseFloat(val)||0).toString();
+  p.lastUpdated=new Date().toISOString();
+  sv(K.PT,pantry);renderPantrySummary();
+}
+function delPantryItem(id){pantry=pantry.filter(x=>x.id!==id);sv(K.PT,pantry);renderPantry();renderPantrySummary();}
+function addPantryToShopList(id){
+  const p=pantry.find(x=>x.id===id);
+  if(!p)return;
+  shopList.unshift({id:Date.now()+'_sl',item:p.item,qty:'',unit:p.unit||'',category:p.category||'',note:'(from pantry)',done:false,addedAt:new Date().toISOString()});
+  sv(K.SL,shopList);
+  toast(p.item+' added to shopping list','tg');
+}
+function renderPantry(){
+  const catF=document.getElementById('pt-filter-cat')?.value||'';
+  const sortV=document.getElementById('pt-sort')?.value||'name';
+  let items=[...pantry];
+  if(catF)items=items.filter(x=>x.category===catF);
+  if(sortV==='name')items.sort((a,b)=>a.item.localeCompare(b.item));
+  else if(sortV==='cat')items.sort((a,b)=>(a.category||'').localeCompare(b.category||''));
+  else if(sortV==='added')items.sort((a,b)=>new Date(b.addedAt)-new Date(a.addedAt));
+  else if(sortV==='low')items.sort((a,b)=>(parseFloat(a.qty)||0)-(parseFloat(b.qty)||0));
+  const w=document.getElementById('pantry-list');
+  if(!items.length){w.innerHTML='<div style="padding:20px;text-align:center;color:var(--t3);font-size:.8rem">Pantry is empty</div>';return;}
+  w.innerHTML=items.map(p=>{
+    const qty=parseFloat(p.qty)||0;
+    const step=p.unit==='kgs'||p.unit==='ltr'?0.5:1;
+    const qtyClass=qty===0?'out-stock':qty<2?'low-stock':'';
+    const catC=p.category?catCol(p.category):'#9BA3BF';
+    return`<div class="pantry-item">
+      <div class="pt-icon" style="background:${catC}18">${p.category?renderIcon(catIcon(p.category)):'🏺'}</div>
+      <div>
+        <div class="pt-name">${p.item}</div>
+        <div class="pt-meta">${p.category||'Uncategorised'} · Added ${new Date(p.addedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</div>
+      </div>
+      <div class="pt-qty-edit">
+        <button class="qty-btn" onclick="adjustPantryQty('${p.id}',-${step})">−</button>
+        <span class="qty-val ${qtyClass}">${qty}${p.unit?' '+p.unit:''}</span>
+        <button class="qty-btn" onclick="adjustPantryQty('${p.id}',${step})">+</button>
+      </div>
+      <div class="si-actions">
+        <button class="si-btn" onclick="addPantryToShopList('${p.id}')" title="Add to shopping list">🛍️</button>
+        <button class="si-btn red del-btn" onclick="delPantryItem('${p.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderPantrySummary(){
+  const total=pantry.length;
+  const outOfStock=pantry.filter(p=>parseFloat(p.qty)===0).length;
+  const lowStock=pantry.filter(p=>parseFloat(p.qty)>0&&parseFloat(p.qty)<2).length;
+  document.getElementById('pt-summary').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div style="text-align:center;padding:10px;background:var(--bg);border-radius:var(--rs)"><div style="font-size:1.2rem;font-weight:800">${total}</div><div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--t3)">Items</div></div>
+      <div style="text-align:center;padding:10px;background:#FFF3E0;border-radius:var(--rs)"><div style="font-size:1.2rem;font-weight:800;color:var(--orange)">${lowStock}</div><div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--t3)">Low Stock</div></div>
+      <div style="text-align:center;padding:10px;background:var(--red-bg);border-radius:var(--rs)"><div style="font-size:1.2rem;font-weight:800;color:var(--red)">${outOfStock}</div><div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--t3)">Out of Stock</div></div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+function toast(msg,cls=''){const el=document.getElementById('toast');el.textContent=msg;el.className='toast '+(cls||'');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2600);}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  renderDash();renderEntry();renderExpenses();updateGistTop();
+});
+</script>
+</body>
+</html>
