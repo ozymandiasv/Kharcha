@@ -302,26 +302,12 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
 <body>
 
 <!-- SIDEBAR -->
-<nav class="sb">
+<nav class="sb" id="sidebar">
   <div class="sb-logo">
     <div class="sb-logo-ic">K₹</div>
     <div class="sb-logo-txt">Kha<span>₹cha</span></div>
   </div>
-  <div class="sb-sect">General</div>
-  <div class="nav on" onclick="go('dashboard',this)"><div class="nav-ic">📊</div><span>Dashboard</span></div>
-  <div class="nav" onclick="go('expenses',this)"><div class="nav-ic">📋</div><span>All Expenses</span></div>
-  <div class="nav" onclick="go('entry',this)"><div class="nav-ic">➕</div><span>Add Entry</span></div>
-  <div class="sb-sect">Analyse</div>
-  <div class="nav" onclick="go('report',this)"><div class="nav-ic">📅</div><span>Reports</span></div>
-  <div class="nav" onclick="go('pivot',this)"><div class="nav-ic">⊞</div><span>Pivot</span></div>
-  <div class="nav" onclick="go('txns',this)"><div class="nav-ic">🗂️</div><span>Transactions</span></div>
-  <div class="nav" onclick="go('lookup',this)"><div class="nav-ic">🔍</div><span>Item Lookup</span></div>
-  <div class="sb-sect">Settings</div>
-  <div class="nav" onclick="go('manage',this)"><div class="nav-ic">⚙️</div><span>Manage</span></div>
-  <div class="nav" onclick="go('gist',this)"><div class="nav-ic">☁️</div><span>Sync / Gist</span></div>
-  <div class="sb-sect">Household</div>
-  <div class="nav" onclick="go('shopping',this)"><div class="nav-ic">🛍️</div><span>Shopping List</span></div>
-  <div class="nav" onclick="go('pantry',this)"><div class="nav-ic">🏺</div><span>Pantry</span></div>
+  <div id="sb-nav-links"><!-- rendered by renderSidebar() --></div>
   <div class="sb-foot">
     <button class="import-btn" onclick="document.getElementById('imp-file').click()"><span>↑ Import</span></button>
     <input type="file" id="imp-file" accept=".json,.csv" style="display:none" onchange="handleImport(this)">
@@ -348,17 +334,19 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
 
     <!-- ══════════ DASHBOARD ══════════ -->
     <div class="page on" id="page-dashboard">
+      <!-- 4 stat cards -->
       <div class="g4" id="dash-stats"></div>
+      <!-- Row 2: 12-week chart + category donut -->
       <div class="g65">
         <div class="card">
           <div class="card-hd">
-            <div class="card-title"><div class="card-ic" style="background:#EEF1FD">📈</div>Monthly Expenses</div>
+            <div class="card-title"><div class="card-ic" style="background:#EEF1FD">📈</div>Last 12 Weeks</div>
           </div>
-          <div class="ch ch-220"><canvas id="c-monthly"></canvas></div>
+          <div class="ch ch-220"><canvas id="c-weeks"></canvas></div>
         </div>
         <div class="card">
           <div class="card-hd">
-            <div class="card-title"><div class="card-ic" style="background:#F3E8FF">🎯</div>By Category</div>
+            <div class="card-title"><div class="card-ic" style="background:#F3E8FF">🎯</div>This Month by Category</div>
             <button class="abtn sm" onclick="go('report',document.querySelectorAll('.nav')[7])">Report →</button>
           </div>
           <div style="display:flex;gap:12px;align-items:center">
@@ -367,16 +355,21 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
           </div>
         </div>
       </div>
+      <!-- Row 3: Pantry snapshot + Shopping list + Recent -->
       <div class="g3">
         <div class="card">
           <div class="card-hd">
-            <div class="card-title"><div class="card-ic" style="background:#EBF9EF">🛍️</div>Online vs Offline</div>
+            <div class="card-title"><div class="card-ic" style="background:#EBF9EF">🏺</div>Pantry</div>
+            <button class="abtn sm" onclick="go('pantry',document.querySelectorAll('.nav')[10])">Open →</button>
           </div>
-          <div class="ch ch-180"><canvas id="c-oo"></canvas></div>
+          <div id="dash-pantry"></div>
         </div>
         <div class="card">
-          <div class="card-hd"><div class="card-title"><div class="card-ic" style="background:#FFF8E1">🏪</div>Top Stores</div></div>
-          <div id="store-list"></div>
+          <div class="card-hd">
+            <div class="card-title"><div class="card-ic" style="background:#FFF8E1">🛍️</div>Shopping List</div>
+            <button class="abtn sm" onclick="go('shopping',document.querySelectorAll('.nav')[9])">Open →</button>
+          </div>
+          <div id="dash-shopping"></div>
         </div>
         <div class="card">
           <div class="card-hd"><div class="card-title"><div class="card-ic" style="background:#FEF0F7">📋</div>Recent</div></div>
@@ -387,22 +380,32 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
 
     <!-- ══════════ ALL EXPENSES ══════════ -->
     <div class="page" id="page-expenses">
+      <!-- Tab bar: months + All Time -->
+      <div id="exp-month-tabs" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px"></div>
+      <!-- Filters -->
       <div class="fbar">
         <span class="flbl">Filter</span>
-        <div class="fsel-w"><select class="fsel" id="fe-month"><option value="">All Months</option></select></div>
         <div class="fsel-w"><select class="fsel" id="fe-cat"><option value="">All Categories</option></select></div>
         <div class="fsel-w"><select class="fsel" id="fe-sub"><option value="">All Sub-cats</option></select></div>
         <div class="fsel-w"><select class="fsel" id="fe-store"><option value="">All Stores</option></select></div>
         <div class="fsel-w"><select class="fsel" id="fe-mode"><option value="">Online+Offline</option><option value="online">Online only</option><option value="offline">Offline only</option></select></div>
+        <div class="fsel-w"><select class="fsel" id="fe-perpage">
+          <option value="50">50 / page</option>
+          <option value="100" selected>100 / page</option>
+          <option value="250">250 / page</option>
+          <option value="all">All</option>
+        </select></div>
         <input class="fsel" id="fe-q" placeholder="Search…" oninput="renderExpTable()">
         <button class="abtn" onclick="renderExpTable()">Apply</button>
       </div>
       <div class="card">
         <div class="card-hd">
-          <div class="card-title">All Expenses</div>
+          <div class="card-title" id="exp-title">Expenses</div>
           <div id="exp-count" style="font-size:.7rem;color:var(--t3);font-weight:600"></div>
         </div>
         <div class="tbl-wrap" id="exp-table"></div>
+        <!-- Pagination -->
+        <div id="exp-pagination" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-top:1px solid var(--border)"></div>
       </div>
     </div>
 
@@ -494,13 +497,10 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
         <button class="abtn" onclick="renderReport()">Generate</button>
       </div>
 
-      <!-- Summary KPIs -->
+      <!-- Row 1: Summary KPIs -->
       <div class="r-sum" id="r-sum"></div>
 
-      <!-- Online / Offline / Other -->
-      <div class="oo-grid" id="r-oo"></div>
-
-      <!-- Charts row 1 -->
+      <!-- Row 2: Category pie + Daily Spend line -->
       <div class="g2" style="margin-bottom:18px">
         <div class="card">
           <div class="card-hd"><div class="card-title">Category Breakdown</div></div>
@@ -511,21 +511,40 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
           <div class="ch ch-220"><canvas id="rc-daily"></canvas></div>
         </div>
       </div>
-      <!-- Charts row 2 -->
+
+      <!-- Row 3: Sub-cat vertical bar + Store pie -->
       <div class="g2" style="margin-bottom:18px">
         <div class="card">
-          <div class="card-hd"><div class="card-title">Sub-category Breakdown</div></div>
+          <div class="card-hd"><div class="card-title">Sub-category Spend</div></div>
           <div class="ch ch-220"><canvas id="rc-sub"></canvas></div>
         </div>
         <div class="card">
           <div class="card-hd"><div class="card-title">Store Breakdown</div></div>
           <div class="ch ch-220"><canvas id="rc-store"></canvas></div>
+          <div id="rc-store-oo" style="display:flex;gap:10px;justify-content:center;padding:8px 0 2px;flex-wrap:wrap"></div>
         </div>
       </div>
-      <!-- Per-Category Subcat Tables -->
+
+      <!-- Row 4: Sub-category detail tables (per category, grid-aligned) -->
       <div class="card" style="margin-bottom:18px">
-        <div class="card-hd"><div class="card-title">Sub-category Detail by Category</div></div>
+        <div class="card-hd"><div class="card-title">Sub-category Detail</div></div>
         <div id="r-subcat-tables"></div>
+      </div>
+
+      <!-- Row 5: Item Lookup (inlined) -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title">🔍 Item Lookup</div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+          <input type="text" class="fi" id="rl-item" placeholder="e.g. Milk, Fish, Petrol…" style="flex:1;min-width:160px">
+          <div class="fsel-w"><select class="fsel" id="rl-period">
+            <option value="month">This Month</option>
+            <option value="3m">Last 3 Months</option>
+            <option value="year">2026</option>
+            <option value="all" selected>All Time</option>
+          </select></div>
+          <button class="abtn" onclick="doReportLookup()">Search</button>
+        </div>
+        <div id="rl-result"></div>
       </div>
     </div>
 
@@ -626,6 +645,13 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
           <input type="text" class="fi" id="ns-name" placeholder="Add store…" style="max-width:220px">
           <button class="abtn sm" onclick="addStore()">Add</button>
         </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="card-hd">
+          <div class="card-title">🧭 Navigation Icons</div>
+          <span style="font-size:.68rem;color:var(--t3)">Click icon or Change button</span>
+        </div>
+        <div id="manage-nav-icons"></div>
       </div>
     </div>
 
@@ -800,7 +826,7 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
 // ═══════════════════════════════════════════
 // SEED DATA
 // ═══════════════════════════════════════════
-const SEED=[{"id":"1","date":"2026-01-01","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Other","online":false,"qty":"","unit":"","amount":2854.0,"note":""},{"id":"2","date":"2026-01-01","category":"Household","subcat":"Clothing & Tailoring","item":"Tailoring","store":"Other","online":false,"qty":"","unit":"","amount":110.0,"note":""},{"id":"3","date":"2026-01-02","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Medical Store","online":false,"qty":"","unit":"","amount":257.0,"note":""},{"id":"4","date":"2026-01-05","category":"Healthcare","subcat":"Hospital & Clinic","item":"Hospital Fees","store":"Other","online":false,"qty":"","unit":"","amount":1100.0,"note":""},{"id":"5","date":"2026-01-05","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Other","online":false,"qty":"","unit":"","amount":232.0,"note":""},{"id":"6","date":"2026-01-05","category":"Grocery","subcat":"Dining & Takeaway","item":"Dining Out","store":"Other","online":false,"qty":"","unit":"","amount":441.0,"note":""},{"id":"7","date":"2026-01-06","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Medical Store","online":false,"qty":"","unit":"","amount":200.0,"note":""},{"id":"8","date":"2026-01-06","category":"Grocery","subcat":"Fruits","item":"Coconut Oil","store":"Malayali Store","online":false,"qty":"3","unit":"ltr","amount":1200.0,"note":""},{"id":"9","date":"2026-01-08","category":"Grocery","subcat":"Spices & Condiments","item":"Chilli Powder","store":"Blinkit","online":true,"qty":"400","unit":"gms","amount":335.0,"note":""},{"id":"10","date":"2026-01-08","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":40.0,"note":""},{"id":"11","date":"2026-01-08","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Regular Store","online":false,"qty":"","unit":"","amount":80.0,"note":""},{"id":"12","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Jaggery","store":"Regular Store","online":false,"qty":"","unit":"","amount":65.0,"note":""},{"id":"13","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Pappadam","store":"Malayali Store","online":false,"qty":"3","unit":"pkt","amount":150.0,"note":""},{"id":"14","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Ada for Payasam","store":"Malayali Store","online":false,"qty":"2","unit":"pkt","amount":140.0,"note":""},{"id":"15","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Matta Rice","store":"Malayali Store","online":false,"qty":"10","unit":"kgs","amount":790.0,"note":""},{"id":"16","date":"2026-01-08","category":"Grocery","subcat":"Dairy","item":"Milk","store":"DMart","online":false,"qty":"1","unit":"ltr","amount":110.0,"note":""},{"id":"17","date":"2026-01-08","category":"Grocery","subcat":"Vegetables","item":"Brinjal","store":"DMart","online":false,"qty":"2","unit":"nos","amount":17.44,"note":""},{"id":"18","date":"2026-01-08","category":"Grocery","subcat":"Vegetables","item":"Cheera Leaf","store":"DMart","online":false,"qty":"2","unit":"nos","amount":30.0,"note":""},{"id":"19","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Cashew","store":"DMart","online":false,"qty":"500","unit":"gms","amount":429.0,"note":""},{"id":"20","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Almonds","store":"DMart","online":false,"qty":"1","unit":"kgs","amount":789.0,"note":""},{"id":"21","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Dates","store":"DMart","online":false,"qty":"500","unit":"gms","amount":119.0,"note":""},{"id":"22","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Raisins","store":"DMart","online":false,"qty":"500","unit":"gms","amount":239.0,"note":""},{"id":"23","date":"2026-01-08","category":"Grocery","subcat":"Beverages","item":"Coffee Powder","store":"DMart","online":false,"qty":"500","unit":"gms","amount":380.0,"note":""},{"id":"24","date":"2026-01-08","category":"Grocery","subcat":"Beverages","item":"Tea Powder","store":"DMart","online":false,"qty":"1","unit":"kgs","amount":570.0,"note":""},{"id":"25","date":"2026-01-08","category":"Grocery","subcat":"Spices & Condiments","item":"Turmeric Powder","store":"DMart","online":false,"qty":"100","unit":"gms","amount":29.0,"note":""},{"id":"26","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Flour","store":"DMart","online":false,"qty":"1","unit":"kgs","amount":46.5,"note":""},{"id":"27","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Groundnut","store":"DMart","online":false,"qty":"500","unit":"gms","amount":94.5,"note":""},{"id":"28","date":"2026-01-08","category":"Grocery","subcat":"Spices & Condiments","item":"Mustard Seed","store":"DMart","online":false,"qty":"200","unit":"gms","amount":25.0,"note":""},{"id":"29","date":"2026-01-08","category":"Grocery","subcat":"Sweets & Snacks","item":"Chocolates","store":"DMart","online":false,"qty":"1","unit":"pkt","amount":109.0,"note":""},{"id":"30","date":"2026-01-08","category":"Grocery","subcat":"Bakery & Snacks","item":"Biscuit","store":"DMart","online":false,"qty":"960","unit":"gms","amount":118.0,"note":""},{"id":"31","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Medicines","store":"DMart","online":false,"qty":"100","unit":"gms","amount":153.0,"note":""},{"id":"32","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Dettol Antiseptic","store":"DMart","online":false,"qty":"1","unit":"ltr","amount":414.87,"note":""},{"id":"33","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Soap","store":"DMart","online":false,"qty":"5","unit":"nos","amount":155.0,"note":""},{"id":"34","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Kitchenware","store":"DMart","online":false,"qty":"","unit":"","amount":92.0,"note":""},{"id":"35","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Home Accessories","store":"DMart","online":false,"qty":"2","unit":"nos","amount":278.0,"note":""},{"id":"36","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Kitchenware","store":"DMart","online":false,"qty":"3","unit":"nos","amount":192.0,"note":""},{"id":"37","date":"2026-01-08","category":"Household","subcat":"Utensils & Kitchenware","item":"Kitchenware","store":"DMart","online":false,"qty":"1","unit":"nos","amount":139.0,"note":""},{"id":"38","date":"2026-01-08","category":"Household","subcat":"Utensils & Kitchenware","item":"Utensil Set","store":"DMart","online":false,"qty":"","unit":"","amount":1029.0,"note":""},{"id":"39","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Toothbrush","store":"DMart","online":false,"qty":"","unit":"","amount":98.0,"note":""},{"id":"40","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Skincare","store":"DMart","online":false,"qty":"1","unit":"nos","amount":140.0,"note":""},{"id":"41","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Skincare","store":"DMart","online":false,"qty":"600","unit":"ml","amount":380.0,"note":""},{"id":"42","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Hair Dye","store":"DMart","online":false,"qty":"1","unit":"pkt","amount":34.0,"note":""},{"id":"43","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Deodorant","store":"DMart","online":false,"qty":"200","unit":"ml","amount":149.5,"note":""},{"id":"44","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Hand Wash","store":"DMart","online":false,"qty":"725","unit":"ml","amount":84.0,"note":""},{"id":"45","date":"2026-01-08","category":"Household","subcat":"Cleaning Supplies","item":"Washing Detergent","store":"DMart","online":false,"qty":"4","unit":"ltr","amount":599.0,"note":""},{"id":"46","date":"2026-01-08","category":"Household","subcat":"Cleaning Supplies","item":"Cleaning Tools","store":"DMart","online":false,"qty":"2","unit":"nos","amount":40.0,"note":""},{"id":"47","date":"2026-01-08","category":"Household","subcat":"Utensils & Kitchenware","item":"Kitchenware","store":"DMart","online":false,"qty":"1","unit":"nos","amount":49.0,"note":""},{"id":"48","date":"2026-01-08","category":"Household","subcat":"Cleaning Supplies","item":"Cleaning Tools","store":"DMart","online":false,"qty":"1","unit":"nos","amount":99.0,"note":""},{"id":"49","date":"2026-01-09","category":"Grocery","subcat":"Fish","item":"Fish","store":"Regular Store","online":false,"qty":"4","unit":"kgs","amount":2200.0,"note":""},{"id":"50","date":"2026-01-09","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":800.0,"note":""},{"id":"51","date":"2026-01-09","category":"Healthcare","subcat":"Medicines","item":"Medical Equipment","store":"Amazon","online":true,"qty":"","unit":"","amount":298.0,"note":""},{"id":"52","date":"2026-01-09","category":"Household","subcat":"Cleaning Supplies","item":"Dishwashing Liquid","store":"Flipkart","online":true,"qty":"","unit":"","amount":148.0,"note":""},{"id":"53","date":"2026-01-09","category":"Grocery","subcat":"Vegetables","item":"Curry Leaves","store":"Flipkart","online":true,"qty":"","unit":"","amount":18.0,"note":""},{"id":"54","date":"2026-01-09","category":"Grocery","subcat":"Vegetables","item":"Snake Gourd","store":"Flipkart","online":true,"qty":"","unit":"","amount":39.0,"note":""},{"id":"55","date":"2026-01-09","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Flipkart","online":true,"qty":"500","unit":"ml","amount":1.0,"note":""},{"id":"56","date":"2026-01-09","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Flipkart","online":true,"qty":"500","unit":"gms","amount":1.0,"note":""},{"id":"57","date":"2026-01-09","category":"Household","subcat":"Utensils & Kitchenware","item":"Utensil","store":"Amazon","online":true,"qty":"1","unit":"nos","amount":899.0,"note":""},{"id":"58","date":"2026-01-09","category":"Household","subcat":"Home & Garden","item":"Newspaper","store":"Other","online":false,"qty":"","unit":"","amount":440.0,"note":""},{"id":"59","date":"2026-01-10","category":"Household","subcat":"Cleaning Supplies","item":"Pest Control","store":"DMart","online":false,"qty":"1","unit":"nos","amount":230.0,"note":""},{"id":"60","date":"2026-01-10","category":"Household","subcat":"Utensils & Kitchenware","item":"Kitchenware","store":"DMart","online":false,"qty":"","unit":"","amount":49.0,"note":""},{"id":"61","date":"2026-01-10","category":"Household","subcat":"Cleaning Supplies","item":"Tissue Paper","store":"DMart","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"62","date":"2026-01-10","category":"Grocery","subcat":"Staples & Pantry","item":"Coriander Powder","store":"DMart","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"63","date":"2026-01-10","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Malayali Store","online":false,"qty":"4","unit":"kgs","amount":440.0,"note":""},{"id":"64","date":"2026-01-10","category":"Grocery","subcat":"Vegetables","item":"Kachil","store":"Malayali Store","online":false,"qty":"760","unit":"gms","amount":122.0,"note":""},{"id":"65","date":"2026-01-10","category":"Grocery","subcat":"Vegetables","item":"Shallots","store":"Malayali Store","online":false,"qty":"760","unit":"gms","amount":99.0,"note":""},{"id":"66","date":"2026-01-10","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Malayali Store","online":false,"qty":"3.27","unit":"kgs","amount":228.0,"note":""},{"id":"67","date":"2026-01-10","category":"Grocery","subcat":"Staples & Pantry","item":"Matta Rice","store":"Malayali Store","online":false,"qty":"1","unit":"nos","amount":102.0,"note":""},{"id":"68","date":"2026-01-11","category":"Grocery","subcat":"Spices & Condiments","item":"Cardamom","store":"Regular Store","online":false,"qty":"50","unit":"gms","amount":220.0,"note":""},{"id":"69","date":"2026-01-12","category":"Household","subcat":"Home & Garden","item":"Disposable Cups","store":"Flipkart","online":true,"qty":"","unit":"","amount":184.0,"note":""},{"id":"70","date":"2026-01-12","category":"Utilities","subcat":"Mobile Recharge","item":"BSNL Recharge","store":"Other","online":false,"qty":"","unit":"","amount":153.0,"note":""},{"id":"71","date":"2026-01-12","category":"Grocery","subcat":"Dining & Takeaway","item":"Hospital Food","store":"Other","online":false,"qty":"","unit":"","amount":858.0,"note":""},{"id":"72","date":"2026-01-13","category":"Healthcare","subcat":"Hospital & Clinic","item":"Parking","store":"Other","online":false,"qty":"","unit":"","amount":80.0,"note":""},{"id":"73","date":"2026-01-13","category":"Grocery","subcat":"Dining & Takeaway","item":"Hospital Food","store":"Other","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"74","date":"2026-01-13","category":"Healthcare","subcat":"Hospital & Clinic","item":"Hospital Fees","store":"Other","online":false,"qty":"","unit":"","amount":131.0,"note":""},{"id":"75","date":"2026-01-14","category":"Grocery","subcat":"Bakery & Snacks","item":"Chiwda","store":"Flipkart","online":true,"qty":"400","unit":"gms","amount":161.0,"note":""},{"id":"76","date":"2026-01-14","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Malayali Store","online":false,"qty":"1.2","unit":"kgs","amount":120.0,"note":""},{"id":"77","date":"2026-01-14","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":42.0,"note":""},{"id":"78","date":"2026-01-15","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Regular Store","online":false,"qty":"3","unit":"nos","amount":210.0,"note":""},{"id":"79","date":"2026-01-16","category":"Household","subcat":"Home & Garden","item":"Bag","store":"Regular Store","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"80","date":"2026-01-16","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"","unit":"","amount":50.0,"note":""},{"id":"81","date":"2026-01-16","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"82","date":"2026-01-16","category":"Grocery","subcat":"Vegetables","item":"Lady\u2019s Finger Okra","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"83","date":"2026-01-16","category":"Grocery","subcat":"Vegetables","item":"Methi Leaves","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"84","date":"2026-01-18","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":300.0,"note":""},{"id":"85","date":"2026-01-18","category":"Grocery","subcat":"Eggs & Dairy","item":"Eggs","store":"Regular Store","online":false,"qty":"","unit":"","amount":270.0,"note":""},{"id":"86","date":"2026-01-19","category":"Transport","subcat":"Petrol","item":"Petrol","store":"Other","online":false,"qty":"","unit":"","amount":1038.0,"note":""},{"id":"87","date":"2026-01-19","category":"Healthcare","subcat":"Hospital & Clinic","item":"Parking","store":"Other","online":false,"qty":"","unit":"","amount":1038.0,"note":""},{"id":"88","date":"2026-01-20","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"","unit":"","amount":200.0,"note":""},{"id":"89","date":"2026-01-20","category":"Grocery","subcat":"Fruits","item":"Grapes","store":"Regular Store","online":false,"qty":"","unit":"","amount":150.0,"note":""},{"id":"90","date":"2026-01-20","category":"Grocery","subcat":"Dining & Takeaway","item":"Juice / Drink","store":"Other","online":false,"qty":"","unit":"","amount":399.0,"note":""},{"id":"91","date":"2026-01-21","category":"Grocery","subcat":"Staples & Pantry","item":"Rice","store":"Regular Store","online":false,"qty":"5","unit":"kgs","amount":220.0,"note":""},{"id":"92","date":"2026-01-21","category":"Grocery","subcat":"Staples & Pantry","item":"Wheat","store":"Regular Store","online":false,"qty":"5","unit":"kgs","amount":230.0,"note":""},{"id":"93","date":"2026-01-21","category":"Grocery","subcat":"Meat","item":"Mutton","store":"Regular Store","online":false,"qty":"","unit":"","amount":1350.0,"note":""},{"id":"94","date":"2026-01-21","category":"Grocery","subcat":"Vegetables","item":"Mint Leaves","store":"Regular Store","online":false,"qty":"","unit":"","amount":20.0,"note":""},{"id":"95","date":"2026-01-21","category":"Grocery","subcat":"Vegetables","item":"Coriander Leaves","store":"Regular Store","online":false,"qty":"","unit":"","amount":20.0,"note":""},{"id":"96","date":"2026-01-21","category":"Grocery","subcat":"Dairy","item":"Curd","store":"Regular Store","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"97","date":"2026-01-21","category":"Grocery","subcat":"Staples & Pantry","item":"Flour Mill","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"98","date":"2026-01-22","category":"Utilities","subcat":"Internet","item":"Internet (Microscan)","store":"Other","online":false,"qty":"","unit":"","amount":589.0,"note":""},{"id":"99","date":"2026-01-22","category":"Utilities","subcat":"Electricity","item":"Electricity (MSEB)","store":"Other","online":false,"qty":"","unit":"","amount":2260.0,"note":""},{"id":"100","date":"2026-01-23","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"101","date":"2026-01-23","category":"Grocery","subcat":"Vegetables","item":"Snake Gourd","store":"Regular Store","online":false,"qty":"","unit":"","amount":70.0,"note":""},{"id":"102","date":"2026-01-23","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"","unit":"","amount":50.0,"note":""},{"id":"103","date":"2026-01-23","category":"Grocery","subcat":"Vegetables","item":"Carrot","store":"Regular Store","online":false,"qty":"","unit":"","amount":30.0,"note":""},{"id":"104","date":"2026-01-23","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Regular Store","online":false,"qty":"","unit":"","amount":176.0,"note":""},{"id":"105","date":"2026-01-23","category":"Grocery","subcat":"Fruits","item":"Banana","store":"Regular Store","online":false,"qty":"","unit":"","amount":199.0,"note":""},{"id":"106","date":"2026-01-23","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"107","date":"2026-01-25","category":"Grocery","subcat":"Fish","item":"Fish","store":"Regular Store","online":false,"qty":"","unit":"","amount":1014.0,"note":""},{"id":"108","date":"2026-01-26","category":"Grocery","subcat":"Staples & Pantry","item":"Sunflower Oil","store":"Flipkart","online":true,"qty":"","unit":"","amount":150.0,"note":""},{"id":"109","date":"2026-01-26","category":"Household","subcat":"Home & Garden","item":"Plant Seeds","store":"Meesho","online":true,"qty":"","unit":"","amount":171.0,"note":""},{"id":"110","date":"2026-01-26","category":"Household","subcat":"Home & Garden","item":"Plant Pots","store":"Meesho","online":true,"qty":"","unit":"","amount":472.0,"note":""},{"id":"111","date":"2026-01-27","category":"Grocery","subcat":"Meat","item":"Beef","store":"Regular Store","online":false,"qty":"","unit":"","amount":600.0,"note":""},{"id":"112","date":"2026-01-27","category":"Grocery","subcat":"Vegetables","item":"Garlic","store":"Regular Store","online":false,"qty":"","unit":"","amount":80.0,"note":""},{"id":"113","date":"2026-01-27","category":"Grocery","subcat":"Bakery & Snacks","item":"Porotta / Takeaway","store":"Regular Store","online":false,"qty":"","unit":"","amount":242.0,"note":""},{"id":"114","date":"2026-01-27","category":"Grocery","subcat":"Vegetables","item":"Curry Leaves","store":"Flipkart","online":true,"qty":"","unit":"","amount":18.0,"note":""},{"id":"115","date":"2026-01-27","category":"Grocery","subcat":"Bakery & Snacks","item":"Oats","store":"Flipkart","online":true,"qty":"","unit":"","amount":140.0,"note":""},{"id":"116","date":"2026-01-28","category":"Grocery","subcat":"Fruits","item":"Apple","store":"Regular Store","online":false,"qty":"","unit":"","amount":250.0,"note":""},{"id":"117","date":"2026-01-28","category":"Utilities","subcat":"Housing & Misc","item":"Appliance Repair","store":"Regular Store","online":false,"qty":"","unit":"","amount":90.0,"note":""},{"id":"118","date":"2026-01-29","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"","unit":"","amount":58.0,"note":""},{"id":"119","date":"2026-01-29","category":"Grocery","subcat":"Bakery & Snacks","item":"Bread","store":"Regular Store","online":false,"qty":"","unit":"","amount":65.0,"note":""},{"id":"120","date":"2026-01-29","category":"Grocery","subcat":"Vegetables","item":"Ginger","store":"Regular Store","online":false,"qty":"","unit":"","amount":20.0,"note":""},{"id":"121","date":"2026-01-29","category":"Utilities","subcat":"Mobile Recharge","item":"Airtel Recharge","store":"Other","online":false,"qty":"","unit":"","amount":548.0,"note":""},{"id":"122","date":"2026-01-30","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"123","date":"2026-01-30","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"124","date":"2026-01-30","category":"Grocery","subcat":"Vegetables","item":"Corn","store":"Regular Store","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"125","date":"2026-01-31","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Regular Store","online":false,"qty":"","unit":"","amount":30.0,"note":""},{"id":"126","date":"2026-01-31","category":"Grocery","subcat":"Vegetables","item":"Coriander Leaves","store":"Regular Store","online":false,"qty":"","unit":"","amount":20.0,"note":""},{"id":"127","date":"2026-01-31","category":"Transport","subcat":"Bike Maintenance","item":"Bike Servicing","store":"Regular Store","online":false,"qty":"","unit":"","amount":1110.0,"note":""},{"id":"128","date":"2026-02-01","category":"Personal","subcat":"Thomas","item":"Monthly Allowance","store":"Other","online":false,"qty":"","unit":"","amount":2500.0,"note":""},{"id":"129","date":"2026-02-01","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Malayali Store","online":false,"qty":"3.4","unit":"kgs","amount":238.0,"note":""},{"id":"130","date":"2026-02-01","category":"Grocery","subcat":"Eggs & Dairy","item":"Duck Eggs","store":"Malayali Store","online":false,"qty":"6","unit":"nos","amount":90.0,"note":""},{"id":"131","date":"2026-02-01","category":"Grocery","subcat":"Dining & Takeaway","item":"Juice / Drink","store":"Regular Store","online":false,"qty":"3","unit":"nos","amount":756.0,"note":""},{"id":"132","date":"2026-02-02","category":"Grocery","subcat":"Spices & Condiments","item":"Red Chilli Whole","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":370.0,"note":""},{"id":"133","date":"2026-02-02","category":"Grocery","subcat":"Spices & Condiments","item":"Coriander Seeds","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":160.0,"note":""},{"id":"134","date":"2026-02-02","category":"Household","subcat":"Clothing & Tailoring","item":"Belt","store":"Regular Store","online":false,"qty":"1","unit":"nos","amount":160.0,"note":""},{"id":"135","date":"2026-02-02","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Regular Store","online":false,"qty":"","unit":"","amount":160.0,"note":""},{"id":"136","date":"2026-02-02","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Other","online":false,"qty":"45","unit":"ltr","amount":2436.0,"note":""},{"id":"137","date":"2026-02-02","category":"Grocery","subcat":"Bakery & Snacks","item":"Bread","store":"Flipkart","online":true,"qty":"400","unit":"gms","amount":36.0,"note":""},{"id":"138","date":"2026-02-02","category":"Grocery","subcat":"Spices & Condiments","item":"Turmeric Powder","store":"Flipkart","online":true,"qty":"200","unit":"gms","amount":63.0,"note":""},{"id":"139","date":"2026-02-03","category":"Utilities","subcat":"Cooking Gas","item":"Cooking Gas","store":"Other","online":false,"qty":"","unit":"","amount":880.0,"note":""},{"id":"140","date":"2026-02-04","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":200.0,"note":""},{"id":"141","date":"2026-02-04","category":"Grocery","subcat":"Fruits","item":"Grapes","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":150.0,"note":""},{"id":"142","date":"2026-02-04","category":"Household","subcat":"Toiletries & Grooming","item":"Skincare","store":"Regular Store","online":false,"qty":"","unit":"","amount":90.0,"note":""},{"id":"143","date":"2026-02-04","category":"Household","subcat":"Toiletries & Grooming","item":"Skincare","store":"Regular Store","online":false,"qty":"","unit":"","amount":140.0,"note":""},{"id":"144","date":"2026-02-04","category":"Grocery","subcat":"Vegetables","item":"Potato","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":30.0,"note":""},{"id":"145","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Regular Store","online":false,"qty":"4","unit":"kgs","amount":100.0,"note":""},{"id":"146","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Potato","store":"Regular Store","online":false,"qty":"1.25","unit":"kgs","amount":30.0,"note":""},{"id":"147","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Carrot","store":"Regular Store","online":false,"qty":"0.5","unit":"","amount":30.0,"note":""},{"id":"148","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Lady\u2019s Finger Okra","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"149","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Beans","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"150","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Ivy Gourd","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"151","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Papaya","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"152","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Raw Banana","store":"Regular Store","online":false,"qty":"5","unit":"nos","amount":20.0,"note":""},{"id":"153","date":"2026-02-06","category":"Grocery","subcat":"Fish","item":"Fish (Bangda)","store":"Regular Store","online":false,"qty":"1.215","unit":"kgs","amount":413.0,"note":""},{"id":"154","date":"2026-02-06","category":"Grocery","subcat":"Fish","item":"Fish (Halwa)","store":"Regular Store","online":false,"qty":"0.820","unit":"kgs","amount":656.0,"note":""},{"id":"155","date":"2026-02-06","category":"Grocery","subcat":"Fish","item":"Fish (Soundade)","store":"Regular Store","online":false,"qty":"1.065","unit":"kgs","amount":320.0,"note":""},{"id":"156","date":"2026-02-06","category":"Utilities","subcat":"Housing & Misc","item":"Bike Repair","store":"Regular Store","online":false,"qty":"","unit":"","amount":350.0,"note":""},{"id":"157","date":"2026-02-06","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"3","unit":"kgs","amount":240.0,"note":""},{"id":"158","date":"2026-02-06","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Cashew","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":860.0,"note":""},{"id":"159","date":"2026-02-06","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":44.0,"note":""},{"id":"160","date":"2026-02-06","category":"Healthcare","subcat":"Fitness","item":"Fitness Equipment","store":"Amazon","online":true,"qty":"","unit":"","amount":704.0,"note":""},{"id":"161","date":"2026-02-07","category":"Utilities","subcat":"Church & Donations","item":"Church Contribution","store":"Other","online":false,"qty":"","unit":"","amount":2000.0,"note":""},{"id":"162","date":"2026-02-07","category":"Household","subcat":"Skincare & Beauty","item":"Cosmetics","store":"Regular Store","online":false,"qty":"","unit":"","amount":260.0,"note":""},{"id":"163","date":"2026-02-07","category":"Grocery","subcat":"Eggs & Dairy","item":"Eggs","store":"Regular Store","online":false,"qty":"6","unit":"nos","amount":45.0,"note":""},{"id":"164","date":"2026-02-08","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":270.0,"note":""},{"id":"165","date":"2026-02-08","category":"Transport","subcat":"Petrol","item":"Petrol","store":"Other","online":false,"qty":"2","unit":"nos","amount":1038.0,"note":""},{"id":"166","date":"2026-02-08","category":"Grocery","subcat":"Bakery & Snacks","item":"Cake","store":"Regular Store","online":false,"qty":"","unit":"","amount":300.0,"note":""},{"id":"167","date":"2026-02-09","category":"Grocery","subcat":"Staples & Pantry","item":"Wheat","store":"Regular Store","online":false,"qty":"10","unit":"kgs","amount":440.0,"note":""},{"id":"168","date":"2026-02-09","category":"Grocery","subcat":"Fruits","item":"Grapes","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":300.0,"note":""},{"id":"169","date":"2026-02-09","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"3","unit":"kgs","amount":220.0,"note":""},{"id":"170","date":"2026-02-10","category":"Grocery","subcat":"Staples & Pantry","item":"Soap","store":"Flipkart","online":true,"qty":"8","unit":"nos","amount":432.0,"note":""},{"id":"171","date":"2026-02-10","category":"Grocery","subcat":"Staples & Pantry","item":"Shaving Cream","store":"Flipkart","online":true,"qty":"","unit":"","amount":48.0,"note":""},{"id":"172","date":"2026-02-10","category":"Grocery","subcat":"Staples & Pantry","item":"Deodorant","store":"Flipkart","online":true,"qty":"3","unit":"nos","amount":226.0,"note":""},{"id":"173","date":"2026-02-10","category":"Grocery","subcat":"Beverages","item":"Tea Powder","store":"Flipkart","online":true,"qty":"1","unit":"kgs","amount":500.0,"note":""},{"id":"174","date":"2026-02-10","category":"Grocery","subcat":"Staples & Pantry","item":"Flour Mill","store":"Other","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"175","date":"2026-02-10","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":100.0,"note":""},{"id":"176","date":"2026-02-10","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":80.0,"note":""},{"id":"177","date":"2026-02-10","category":"Grocery","subcat":"Vegetables","item":"Ginger","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":80.0,"note":""},{"id":"178","date":"2026-02-10","category":"Grocery","subcat":"Vegetables","item":"Lady\u2019s Finger Okra","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":40.0,"note":""},{"id":"179","date":"2026-02-11","category":"Grocery","subcat":"Vegetables","item":"Papaya","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":50.0,"note":""},{"id":"180","date":"2026-02-11","category":"Grocery","subcat":"Vegetables","item":"Snake Gourd","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":50.0,"note":""},{"id":"181","date":"2026-02-11","category":"Grocery","subcat":"Beverages","item":"Coffee Powder","store":"Amazon","online":true,"qty":"500","unit":"gms","amount":314.0,"note":""},{"id":"182","date":"2026-02-12","category":"Household","subcat":"Cleaning Supplies","item":"Washing Detergent","store":"Flipkart","online":true,"qty":"10","unit":"ltr","amount":307.0,"note":""},{"id":"183","date":"2026-02-13","category":"Utilities","subcat":"Housing & Misc","item":"Bike Repair","store":"Other","online":false,"qty":"","unit":"","amount":850.0,"note":""},{"id":"184","date":"2026-02-13","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"185","date":"2026-02-14","category":"Grocery","subcat":"Meat","item":"Chicken","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":130.0,"note":""},{"id":"186","date":"2026-02-14","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"187","date":"2026-02-14","category":"Grocery","subcat":"Dairy","item":"Paneer","store":"Regular Store","online":false,"qty":"250","unit":"gms","amount":90.0,"note":""},{"id":"188","date":"2026-02-14","category":"Grocery","subcat":"Bakery & Snacks","item":"Porotta / Takeaway","store":"Regular Store","online":false,"qty":"10","unit":"nos","amount":242.0,"note":""},{"id":"189","date":"2026-02-15","category":"Grocery","subcat":"Bakery & Snacks","item":"Biscuit","store":"Other","online":false,"qty":"960","unit":"gms","amount":121.0,"note":""},{"id":"190","date":"2026-02-15","category":"Grocery","subcat":"Bakery & Snacks","item":"Porotta / Takeaway","store":"Regular Store","online":false,"qty":"6","unit":"nos","amount":145.0,"note":""},{"id":"191","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Potato","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":30.0,"note":""},{"id":"192","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Green Gourd","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":60.0,"note":""},{"id":"193","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Yam","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":60.0,"note":""},{"id":"194","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Ivy Gourd","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":30.0,"note":""},{"id":"195","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":30.0,"note":""},{"id":"196","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Carrot","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":40.0,"note":""},{"id":"197","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Brinjal","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":30.0,"note":""},{"id":"198","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":100.0,"note":""},{"id":"199","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Pumpkin","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":50.0,"note":""},{"id":"200","date":"2026-02-16","category":"Grocery","subcat":"Sweets & Snacks","item":"Snacks","store":"Regular Store","online":false,"qty":"5","unit":"nos","amount":105.0,"note":""},{"id":"201","date":"2026-02-16","category":"Grocery","subcat":"Sweets & Snacks","item":"Chocolates","store":"Regular Store","online":false,"qty":"","unit":"","amount":125.0,"note":""},{"id":"202","date":"2026-02-17","category":"Utilities","subcat":"Housing & Misc","item":"Appliance Repair","store":"Other","online":false,"qty":"","unit":"","amount":500.0,"note":""},{"id":"203","date":"2026-02-18","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"DMart","online":false,"qty":"1","unit":"kgs","amount":44.0,"note":""},{"id":"204","date":"2026-02-18","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"205","date":"2026-02-18","category":"Household","subcat":"Cleaning Supplies","item":"Washing Detergent","store":"DMart","online":false,"qty":"4","unit":"kgs","amount":569.0,"note":""},{"id":"206","date":"2026-02-18","category":"Grocery","subcat":"Staples & Pantry","item":"Basmati Rice","store":"DMart","online":false,"qty":"5.462","unit":"kgs","amount":300.41,"note":""},{"id":"207","date":"2026-02-18","category":"Grocery","subcat":"Staples & Pantry","item":"Medical Supplies","store":"Malayali Store","online":false,"qty":"5","unit":"nos","amount":33.0,"note":""},{"id":"208","date":"2026-02-18","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Malayali Store","online":false,"qty":"1.79","unit":"kgs","amount":125.3,"note":""},{"id":"209","date":"2026-02-18","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Malayali Store","online":false,"qty":"5.99","unit":"kgs","amount":599.0,"note":""},{"id":"210","date":"2026-02-18","category":"Grocery","subcat":"Vegetables","item":"Shallots","store":"Malayali Store","online":false,"qty":"610","unit":"gms","amount":73.0,"note":""},{"id":"211","date":"2026-02-18","category":"Grocery","subcat":"Sweets & Snacks","item":"Indian Sweets","store":"Regular Store","online":false,"qty":"","unit":"","amount":160.0,"note":""},{"id":"212","date":"2026-02-20","category":"Utilities","subcat":"Electricity","item":"Electricity (MSEB)","store":"Other","online":false,"qty":"","unit":"","amount":2530.0,"note":""},{"id":"213","date":"2026-02-20","category":"Utilities","subcat":"Internet","item":"Internet (Microscan)","store":"Other","online":false,"qty":"","unit":"","amount":589.0,"note":""},{"id":"214","date":"2026-02-21","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"215","date":"2026-02-22","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Regular Store","online":false,"qty":"2.34","unit":"kgs","amount":163.0,"note":""},{"id":"216","date":"2026-02-22","category":"Grocery","subcat":"Vegetables","item":"Shallots","store":"Regular Store","online":false,"qty":"780","unit":"gms","amount":94.0,"note":""},{"id":"217","date":"2026-02-22","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"218","date":"2026-02-23","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":340.0,"note":""},{"id":"219","date":"2026-02-23","category":"Utilities","subcat":"Housing & Misc","item":"Aadhaar Card","store":"Other","online":false,"qty":"","unit":"","amount":75.0,"note":""},{"id":"220","date":"2026-02-23","category":"Utilities","subcat":"Church & Donations","item":"Songbooks","store":"Other","online":false,"qty":"","unit":"","amount":75.0,"note":""},{"id":"221","date":"2026-02-23","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"222","date":"2026-02-24","category":"Grocery","subcat":"Staples & Pantry","item":"Pappadam","store":"Malayali Store","online":false,"qty":"","unit":"","amount":50.0,"note":""},{"id":"223","date":"2026-02-25","category":"Healthcare","subcat":"Medical Supplies","item":"Medical Supplies","store":"Regular Store","online":false,"qty":"","unit":"","amount":190.0,"note":""},{"id":"224","date":"2026-02-26","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"225","date":"2026-02-26","category":"Grocery","subcat":"Dairy","item":"IceCream","store":"Regular Store","online":false,"qty":"750","unit":"ml","amount":105.0,"note":""},{"id":"226","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":50.0,"note":""},{"id":"227","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Okra","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":40.0,"note":""},{"id":"228","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Potato","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":30.0,"note":""},{"id":"229","date":"2026-02-27","category":"Grocery","subcat":"Dairy","item":"IceCream","store":"Regular Store","online":false,"qty":"1.5","unit":"kgs","amount":210.0,"note":""},{"id":"230","date":"2026-02-27","category":"Grocery","subcat":"Bakery & Snacks","item":"Sunfeast Noodles","store":"Flipkart","online":true,"qty":"","unit":"","amount":94.0,"note":""},{"id":"231","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Curry Leaves","store":"Flipkart","online":true,"qty":"","unit":"","amount":9.0,"note":""},{"id":"232","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Peas Peeled","store":"Flipkart","online":true,"qty":"250","unit":"gms","amount":50.0,"note":""},{"id":"233","date":"2026-02-27","category":"Grocery","subcat":"Spices & Condiments","item":"Salt","store":"Flipkart","online":true,"qty":"1","unit":"kgs","amount":25.0,"note":""},{"id":"234","date":"2026-02-27","category":"Grocery","subcat":"Staples & Pantry","item":"Flour","store":"Flipkart","online":true,"qty":"1","unit":"kgs","amount":47.0,"note":""},{"id":"235","date":"2026-02-27","category":"Household","subcat":"Toiletries & Grooming","item":"String","store":"Meesho","online":true,"qty":"","unit":"","amount":100.0,"note":""},{"id":"236","date":"2026-02-28","category":"Grocery","subcat":"Staples & Pantry","item":"Flour Mill","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"237","date":"2026-03-01","category":"Household","subcat":"Clothing & Tailoring","item":"Shoes","store":"Myntra","online":true,"qty":"","unit":"","amount":583.0,"note":""},{"id":"238","date":"2026-03-01","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"239","date":"2026-03-02","category":"Personal","subcat":"Thomas","item":"Monthly Allowance","store":"Other","online":false,"qty":"","unit":"","amount":2500.0,"note":""},{"id":"240","date":"2026-03-02","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":44.0,"note":""},{"id":"241","date":"2026-03-02","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"242","date":"2026-03-02","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Other","online":false,"qty":"30","unit":"ltr","amount":1640.0,"note":""},{"id":"243","date":"2026-03-02","category":"Grocery","subcat":"Staples & Pantry","item":"Matta Rice","store":"Regular Store","online":false,"qty":"10","unit":"kgs","amount":790.0,"note":""},{"id":"244","date":"2026-03-02","category":"Grocery","subcat":"Staples & Pantry","item":"Pappadam","store":"Regular Store","online":false,"qty":"","unit":"","amount":50.0,"note":""},{"id":"245","date":"2026-03-02","category":"Grocery","subcat":"Staples & Pantry","item":"Sunflower Oil","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":170.0,"note":""},{"id":"246","date":"2026-03-03","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":620.0,"note":""},{"id":"247","date":"2026-03-03","category":"Household","subcat":"Cleaning Supplies","item":"Glass Cleaner","store":"Flipkart","online":true,"qty":"1","unit":"ltr","amount":94.0,"note":""},{"id":"248","date":"2026-03-03","category":"Household","subcat":"Cleaning Supplies","item":"Dishwashing Liquid","store":"Flipkart","online":true,"qty":"2","unit":"ltr","amount":214.0,"note":""},{"id":"249","date":"2026-03-03","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Flipkart","online":true,"qty":"500","unit":"gms","amount":1.0,"note":""},{"id":"250","date":"2026-03-03","category":"Household","subcat":"Toiletries & Grooming","item":"Soap","store":"Flipkart","online":true,"qty":"6","unit":"nos","amount":107.0,"note":""},{"id":"251","date":"2026-03-03","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Flipkart","online":true,"qty":"1","unit":"ltr","amount":30.0,"note":""},{"id":"252","date":"2026-03-03","category":"Personal","subcat":"Amal","item":"Monthly Allowance","store":"Other","online":false,"qty":"","unit":"","amount":500.0,"note":""},{"id":"253","date":"2026-03-03","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":70.0,"note":""},{"id":"254","date":"2026-03-05","category":"Grocery","subcat":"Staples & Pantry","item":"Moong Whole","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":260.0,"note":""},{"id":"255","date":"2026-03-05","category":"Grocery","subcat":"Staples & Pantry","item":"Chana Dal","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":70.0,"note":""},{"id":"256","date":"2026-03-05","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"257","date":"2026-03-05","category":"Grocery","subcat":"Fruits","item":"Banana","store":"Regular Store","online":false,"qty":"6","unit":"nos","amount":30.0,"note":""},{"id":"258","date":"2026-03-06","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Malayali Store","online":false,"qty":"3.12","unit":"kgs","amount":218.0,"note":""},{"id":"259","date":"2026-03-06","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Malayali Store","online":false,"qty":"3.12","unit":"kgs","amount":312.0,"note":""},{"id":"260","date":"2026-03-09","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":360.0,"note":""},{"id":"261","date":"2026-03-09","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"262","date":"2026-03-09","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":44.0,"note":""},{"id":"263","date":"2026-03-09","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":70.0,"note":""},{"id":"264","date":"2026-03-10","category":"Grocery","subcat":"Spices & Condiments","item":"Chilli Powder","store":"Regular Store","online":false,"qty":"100","unit":"gms","amount":58.0,"note":""},{"id":"265","date":"2026-03-10","category":"Grocery","subcat":"Spices & Condiments","item":"Pav Bhaji Masala","store":"Regular Store","online":false,"qty":"50","unit":"gms","amount":48.0,"note":""},{"id":"266","date":"2026-03-10","category":"Utilities","subcat":"Housing & Misc","item":"Aadhaar Card","store":"Other","online":false,"qty":"3","unit":"nos","amount":225.0,"note":""},{"id":"267","date":"2026-03-10","category":"Grocery","subcat":"Bakery & Snacks","item":"Bread","store":"Regular Store","online":false,"qty":"10","unit":"nos","amount":150.0,"note":""}]
+const SEED=[{"id":"1","date":"2026-01-01","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Other","online":false,"qty":"","unit":"","amount":2854.0,"note":""},{"id":"2","date":"2026-01-01","category":"Household","subcat":"Clothing & Tailoring","item":"Tailoring","store":"Other","online":false,"qty":"","unit":"","amount":110.0,"note":""},{"id":"3","date":"2026-01-02","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Medical Store","online":false,"qty":"","unit":"","amount":257.0,"note":""},{"id":"4","date":"2026-01-05","category":"Healthcare","subcat":"Hospital & Clinic","item":"Hospital Fees","store":"Other","online":false,"qty":"","unit":"","amount":1100.0,"note":""},{"id":"5","date":"2026-01-05","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Other","online":false,"qty":"","unit":"","amount":232.0,"note":""},{"id":"6","date":"2026-01-05","category":"Grocery","subcat":"Dining & Takeaway","item":"Dining Out","store":"Other","online":false,"qty":"","unit":"","amount":441.0,"note":""},{"id":"7","date":"2026-01-06","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Medical Store","online":false,"qty":"","unit":"","amount":200.0,"note":""},{"id":"8","date":"2026-01-06","category":"Grocery","subcat":"Fruits","item":"Coconut Oil","store":"Malayali Store","online":false,"qty":"3","unit":"ltr","amount":1200.0,"note":""},{"id":"9","date":"2026-01-08","category":"Grocery","subcat":"Spices & Condiments","item":"Chilli Powder","store":"Blinkit","online":true,"qty":"400","unit":"gms","amount":335.0,"note":""},{"id":"10","date":"2026-01-08","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":40.0,"note":""},{"id":"11","date":"2026-01-08","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Regular Store","online":false,"qty":"","unit":"","amount":80.0,"note":""},{"id":"12","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Jaggery","store":"Regular Store","online":false,"qty":"","unit":"","amount":65.0,"note":""},{"id":"13","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Pappadam","store":"Malayali Store","online":false,"qty":"3","unit":"pkt","amount":150.0,"note":""},{"id":"14","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Ada for Payasam","store":"Malayali Store","online":false,"qty":"2","unit":"pkt","amount":140.0,"note":""},{"id":"15","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Matta Rice","store":"Malayali Store","online":false,"qty":"10","unit":"kgs","amount":790.0,"note":""},{"id":"16","date":"2026-01-08","category":"Grocery","subcat":"Dairy","item":"Milk","store":"DMart","online":false,"qty":"1","unit":"ltr","amount":110.0,"note":""},{"id":"17","date":"2026-01-08","category":"Grocery","subcat":"Vegetables","item":"Brinjal","store":"DMart","online":false,"qty":"2","unit":"nos","amount":17.44,"note":""},{"id":"18","date":"2026-01-08","category":"Grocery","subcat":"Vegetables","item":"Cheera Leaf","store":"DMart","online":false,"qty":"2","unit":"nos","amount":30.0,"note":""},{"id":"19","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Cashew","store":"DMart","online":false,"qty":"500","unit":"gms","amount":429.0,"note":""},{"id":"20","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Almonds","store":"DMart","online":false,"qty":"1","unit":"kgs","amount":789.0,"note":""},{"id":"21","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Dates","store":"DMart","online":false,"qty":"500","unit":"gms","amount":119.0,"note":""},{"id":"22","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Raisins","store":"DMart","online":false,"qty":"500","unit":"gms","amount":239.0,"note":""},{"id":"23","date":"2026-01-08","category":"Grocery","subcat":"Beverages","item":"Coffee Powder","store":"DMart","online":false,"qty":"500","unit":"gms","amount":380.0,"note":""},{"id":"24","date":"2026-01-08","category":"Grocery","subcat":"Beverages","item":"Tea Powder","store":"DMart","online":false,"qty":"1","unit":"kgs","amount":570.0,"note":""},{"id":"25","date":"2026-01-08","category":"Grocery","subcat":"Spices & Condiments","item":"Turmeric Powder","store":"DMart","online":false,"qty":"100","unit":"gms","amount":29.0,"note":""},{"id":"26","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Flour","store":"DMart","online":false,"qty":"1","unit":"kgs","amount":46.5,"note":""},{"id":"27","date":"2026-01-08","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Groundnut","store":"DMart","online":false,"qty":"500","unit":"gms","amount":94.5,"note":""},{"id":"28","date":"2026-01-08","category":"Grocery","subcat":"Spices & Condiments","item":"Mustard Seed","store":"DMart","online":false,"qty":"200","unit":"gms","amount":25.0,"note":""},{"id":"29","date":"2026-01-08","category":"Grocery","subcat":"Sweets & Snacks","item":"Chocolates","store":"DMart","online":false,"qty":"1","unit":"pkt","amount":109.0,"note":""},{"id":"30","date":"2026-01-08","category":"Grocery","subcat":"Bakery & Snacks","item":"Biscuit","store":"DMart","online":false,"qty":"960","unit":"gms","amount":118.0,"note":""},{"id":"31","date":"2026-01-08","category":"Grocery","subcat":"Staples & Pantry","item":"Medicines","store":"DMart","online":false,"qty":"100","unit":"gms","amount":153.0,"note":""},{"id":"32","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Dettol Antiseptic","store":"DMart","online":false,"qty":"1","unit":"ltr","amount":414.87,"note":""},{"id":"33","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Soap","store":"DMart","online":false,"qty":"5","unit":"nos","amount":155.0,"note":""},{"id":"34","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Kitchenware","store":"DMart","online":false,"qty":"","unit":"","amount":92.0,"note":""},{"id":"35","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Home Accessories","store":"DMart","online":false,"qty":"2","unit":"nos","amount":278.0,"note":""},{"id":"36","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Kitchenware","store":"DMart","online":false,"qty":"3","unit":"nos","amount":192.0,"note":""},{"id":"37","date":"2026-01-08","category":"Household","subcat":"Utensils & Kitchenware","item":"Kitchenware","store":"DMart","online":false,"qty":"1","unit":"nos","amount":139.0,"note":""},{"id":"38","date":"2026-01-08","category":"Household","subcat":"Utensils & Kitchenware","item":"Utensil Set","store":"DMart","online":false,"qty":"","unit":"","amount":1029.0,"note":""},{"id":"39","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Toothbrush","store":"DMart","online":false,"qty":"","unit":"","amount":98.0,"note":""},{"id":"40","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Skincare","store":"DMart","online":false,"qty":"1","unit":"nos","amount":140.0,"note":""},{"id":"41","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Skincare","store":"DMart","online":false,"qty":"600","unit":"ml","amount":380.0,"note":""},{"id":"42","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Hair Dye","store":"DMart","online":false,"qty":"1","unit":"pkt","amount":34.0,"note":""},{"id":"43","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Deodorant","store":"DMart","online":false,"qty":"200","unit":"ml","amount":149.5,"note":""},{"id":"44","date":"2026-01-08","category":"Household","subcat":"Toiletries & Grooming","item":"Hand Wash","store":"DMart","online":false,"qty":"725","unit":"ml","amount":84.0,"note":""},{"id":"45","date":"2026-01-08","category":"Household","subcat":"Cleaning Supplies","item":"Washing Detergent","store":"DMart","online":false,"qty":"4","unit":"ltr","amount":599.0,"note":""},{"id":"46","date":"2026-01-08","category":"Household","subcat":"Cleaning Supplies","item":"Cleaning Tools","store":"DMart","online":false,"qty":"2","unit":"nos","amount":40.0,"note":""},{"id":"47","date":"2026-01-08","category":"Household","subcat":"Utensils & Kitchenware","item":"Kitchenware","store":"DMart","online":false,"qty":"1","unit":"nos","amount":49.0,"note":""},{"id":"48","date":"2026-01-08","category":"Household","subcat":"Cleaning Supplies","item":"Cleaning Tools","store":"DMart","online":false,"qty":"1","unit":"nos","amount":99.0,"note":""},{"id":"49","date":"2026-01-09","category":"Grocery","subcat":"Fish","item":"Fish","store":"Regular Store","online":false,"qty":"4","unit":"kgs","amount":2200.0,"note":""},{"id":"50","date":"2026-01-09","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":800.0,"note":""},{"id":"51","date":"2026-01-09","category":"Healthcare","subcat":"Medicines","item":"Medical Equipment","store":"Amazon","online":true,"qty":"","unit":"","amount":298.0,"note":""},{"id":"52","date":"2026-01-09","category":"Household","subcat":"Cleaning Supplies","item":"Dishwashing Liquid","store":"Flipkart","online":true,"qty":"","unit":"","amount":148.0,"note":""},{"id":"53","date":"2026-01-09","category":"Grocery","subcat":"Vegetables","item":"Curry Leaves","store":"Flipkart","online":true,"qty":"","unit":"","amount":18.0,"note":""},{"id":"54","date":"2026-01-09","category":"Grocery","subcat":"Vegetables","item":"Snake Gourd","store":"Flipkart","online":true,"qty":"","unit":"","amount":39.0,"note":""},{"id":"55","date":"2026-01-09","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Flipkart","online":true,"qty":"500","unit":"ml","amount":1.0,"note":""},{"id":"56","date":"2026-01-09","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Flipkart","online":true,"qty":"500","unit":"gms","amount":1.0,"note":""},{"id":"57","date":"2026-01-09","category":"Household","subcat":"Utensils & Kitchenware","item":"Utensil","store":"Amazon","online":true,"qty":"1","unit":"nos","amount":899.0,"note":""},{"id":"58","date":"2026-01-09","category":"Household","subcat":"Home & Garden","item":"Newspaper","store":"Other","online":false,"qty":"","unit":"","amount":440.0,"note":""},{"id":"59","date":"2026-01-10","category":"Household","subcat":"Cleaning Supplies","item":"Pest Control","store":"DMart","online":false,"qty":"1","unit":"nos","amount":230.0,"note":""},{"id":"60","date":"2026-01-10","category":"Household","subcat":"Utensils & Kitchenware","item":"Kitchenware","store":"DMart","online":false,"qty":"","unit":"","amount":49.0,"note":""},{"id":"61","date":"2026-01-10","category":"Household","subcat":"Cleaning Supplies","item":"Tissue Paper","store":"DMart","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"62","date":"2026-01-10","category":"Grocery","subcat":"Staples & Pantry","item":"Coriander Powder","store":"DMart","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"63","date":"2026-01-10","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Malayali Store","online":false,"qty":"4","unit":"kgs","amount":440.0,"note":""},{"id":"64","date":"2026-01-10","category":"Grocery","subcat":"Vegetables","item":"Kachil","store":"Malayali Store","online":false,"qty":"760","unit":"gms","amount":122.0,"note":""},{"id":"65","date":"2026-01-10","category":"Grocery","subcat":"Vegetables","item":"Shallots","store":"Malayali Store","online":false,"qty":"760","unit":"gms","amount":99.0,"note":""},{"id":"66","date":"2026-01-10","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Malayali Store","online":false,"qty":"3.27","unit":"kgs","amount":228.0,"note":""},{"id":"67","date":"2026-01-10","category":"Grocery","subcat":"Staples & Pantry","item":"Matta Rice","store":"Malayali Store","online":false,"qty":"1","unit":"nos","amount":102.0,"note":""},{"id":"68","date":"2026-01-11","category":"Grocery","subcat":"Spices & Condiments","item":"Cardamom","store":"Regular Store","online":false,"qty":"50","unit":"gms","amount":220.0,"note":""},{"id":"69","date":"2026-01-12","category":"Household","subcat":"Home & Garden","item":"Disposable Cups","store":"Flipkart","online":true,"qty":"","unit":"","amount":184.0,"note":""},{"id":"70","date":"2026-01-12","category":"Utilities","subcat":"Mobile Recharge","item":"BSNL Recharge","store":"Other","online":false,"qty":"","unit":"","amount":153.0,"note":""},{"id":"71","date":"2026-01-12","category":"Grocery","subcat":"Dining & Takeaway","item":"Hospital Food","store":"Other","online":false,"qty":"","unit":"","amount":858.0,"note":""},{"id":"72","date":"2026-01-13","category":"Healthcare","subcat":"Hospital & Clinic","item":"Parking","store":"Other","online":false,"qty":"","unit":"","amount":80.0,"note":""},{"id":"73","date":"2026-01-13","category":"Grocery","subcat":"Dining & Takeaway","item":"Hospital Food","store":"Other","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"74","date":"2026-01-13","category":"Healthcare","subcat":"Hospital & Clinic","item":"Hospital Fees","store":"Other","online":false,"qty":"","unit":"","amount":131.0,"note":""},{"id":"75","date":"2026-01-14","category":"Grocery","subcat":"Bakery & Snacks","item":"Chiwda","store":"Flipkart","online":true,"qty":"400","unit":"gms","amount":161.0,"note":""},{"id":"76","date":"2026-01-14","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Malayali Store","online":false,"qty":"1.2","unit":"kgs","amount":120.0,"note":""},{"id":"77","date":"2026-01-14","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":42.0,"note":""},{"id":"78","date":"2026-01-15","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Regular Store","online":false,"qty":"3","unit":"nos","amount":210.0,"note":""},{"id":"79","date":"2026-01-16","category":"Household","subcat":"Home & Garden","item":"Bag","store":"Regular Store","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"80","date":"2026-01-16","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"","unit":"","amount":50.0,"note":""},{"id":"81","date":"2026-01-16","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"82","date":"2026-01-16","category":"Grocery","subcat":"Vegetables","item":"Lady\u2019s Finger Okra","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"83","date":"2026-01-16","category":"Grocery","subcat":"Vegetables","item":"Methi Leaves","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"84","date":"2026-01-18","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":300.0,"note":""},{"id":"85","date":"2026-01-18","category":"Grocery","subcat":"Eggs","item":"Eggs","store":"Regular Store","online":false,"qty":"","unit":"","amount":270.0,"note":""},{"id":"86","date":"2026-01-19","category":"Transport","subcat":"Petrol","item":"Petrol","store":"Other","online":false,"qty":"","unit":"","amount":1038.0,"note":""},{"id":"87","date":"2026-01-19","category":"Healthcare","subcat":"Hospital & Clinic","item":"Parking","store":"Other","online":false,"qty":"","unit":"","amount":1038.0,"note":""},{"id":"88","date":"2026-01-20","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"","unit":"","amount":200.0,"note":""},{"id":"89","date":"2026-01-20","category":"Grocery","subcat":"Fruits","item":"Grapes","store":"Regular Store","online":false,"qty":"","unit":"","amount":150.0,"note":""},{"id":"90","date":"2026-01-20","category":"Grocery","subcat":"Dining & Takeaway","item":"Juice / Drink","store":"Other","online":false,"qty":"","unit":"","amount":399.0,"note":""},{"id":"91","date":"2026-01-21","category":"Grocery","subcat":"Staples & Pantry","item":"Rice","store":"Regular Store","online":false,"qty":"5","unit":"kgs","amount":220.0,"note":""},{"id":"92","date":"2026-01-21","category":"Grocery","subcat":"Staples & Pantry","item":"Wheat","store":"Regular Store","online":false,"qty":"5","unit":"kgs","amount":230.0,"note":""},{"id":"93","date":"2026-01-21","category":"Grocery","subcat":"Meat","item":"Mutton","store":"Regular Store","online":false,"qty":"","unit":"","amount":1350.0,"note":""},{"id":"94","date":"2026-01-21","category":"Grocery","subcat":"Vegetables","item":"Mint Leaves","store":"Regular Store","online":false,"qty":"","unit":"","amount":20.0,"note":""},{"id":"95","date":"2026-01-21","category":"Grocery","subcat":"Vegetables","item":"Coriander Leaves","store":"Regular Store","online":false,"qty":"","unit":"","amount":20.0,"note":""},{"id":"96","date":"2026-01-21","category":"Grocery","subcat":"Dairy","item":"Curd","store":"Regular Store","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"97","date":"2026-01-21","category":"Grocery","subcat":"Staples & Pantry","item":"Flour Mill","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"98","date":"2026-01-22","category":"Utilities","subcat":"Internet","item":"Internet (Microscan)","store":"Other","online":false,"qty":"","unit":"","amount":589.0,"note":""},{"id":"99","date":"2026-01-22","category":"Utilities","subcat":"Electricity","item":"Electricity (MSEB)","store":"Other","online":false,"qty":"","unit":"","amount":2260.0,"note":""},{"id":"100","date":"2026-01-23","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"101","date":"2026-01-23","category":"Grocery","subcat":"Vegetables","item":"Snake Gourd","store":"Regular Store","online":false,"qty":"","unit":"","amount":70.0,"note":""},{"id":"102","date":"2026-01-23","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"","unit":"","amount":50.0,"note":""},{"id":"103","date":"2026-01-23","category":"Grocery","subcat":"Vegetables","item":"Carrot","store":"Regular Store","online":false,"qty":"","unit":"","amount":30.0,"note":""},{"id":"104","date":"2026-01-23","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Regular Store","online":false,"qty":"","unit":"","amount":176.0,"note":""},{"id":"105","date":"2026-01-23","category":"Grocery","subcat":"Fruits","item":"Banana","store":"Regular Store","online":false,"qty":"","unit":"","amount":199.0,"note":""},{"id":"106","date":"2026-01-23","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"107","date":"2026-01-25","category":"Grocery","subcat":"Fish","item":"Fish","store":"Regular Store","online":false,"qty":"","unit":"","amount":1014.0,"note":""},{"id":"108","date":"2026-01-26","category":"Grocery","subcat":"Staples & Pantry","item":"Sunflower Oil","store":"Flipkart","online":true,"qty":"","unit":"","amount":150.0,"note":""},{"id":"109","date":"2026-01-26","category":"Household","subcat":"Home & Garden","item":"Plant Seeds","store":"Meesho","online":true,"qty":"","unit":"","amount":171.0,"note":""},{"id":"110","date":"2026-01-26","category":"Household","subcat":"Home & Garden","item":"Plant Pots","store":"Meesho","online":true,"qty":"","unit":"","amount":472.0,"note":""},{"id":"111","date":"2026-01-27","category":"Grocery","subcat":"Meat","item":"Beef","store":"Regular Store","online":false,"qty":"","unit":"","amount":600.0,"note":""},{"id":"112","date":"2026-01-27","category":"Grocery","subcat":"Vegetables","item":"Garlic","store":"Regular Store","online":false,"qty":"","unit":"","amount":80.0,"note":""},{"id":"113","date":"2026-01-27","category":"Grocery","subcat":"Bakery & Snacks","item":"Porotta / Takeaway","store":"Regular Store","online":false,"qty":"","unit":"","amount":242.0,"note":""},{"id":"114","date":"2026-01-27","category":"Grocery","subcat":"Vegetables","item":"Curry Leaves","store":"Flipkart","online":true,"qty":"","unit":"","amount":18.0,"note":""},{"id":"115","date":"2026-01-27","category":"Grocery","subcat":"Bakery & Snacks","item":"Oats","store":"Flipkart","online":true,"qty":"","unit":"","amount":140.0,"note":""},{"id":"116","date":"2026-01-28","category":"Grocery","subcat":"Fruits","item":"Apple","store":"Regular Store","online":false,"qty":"","unit":"","amount":250.0,"note":""},{"id":"117","date":"2026-01-28","category":"Utilities","subcat":"Housing & Misc","item":"Appliance Repair","store":"Regular Store","online":false,"qty":"","unit":"","amount":90.0,"note":""},{"id":"118","date":"2026-01-29","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"","unit":"","amount":58.0,"note":""},{"id":"119","date":"2026-01-29","category":"Grocery","subcat":"Bakery & Snacks","item":"Bread","store":"Regular Store","online":false,"qty":"","unit":"","amount":65.0,"note":""},{"id":"120","date":"2026-01-29","category":"Grocery","subcat":"Vegetables","item":"Ginger","store":"Regular Store","online":false,"qty":"","unit":"","amount":20.0,"note":""},{"id":"121","date":"2026-01-29","category":"Utilities","subcat":"Mobile Recharge","item":"Airtel Recharge","store":"Other","online":false,"qty":"","unit":"","amount":548.0,"note":""},{"id":"122","date":"2026-01-30","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"123","date":"2026-01-30","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"124","date":"2026-01-30","category":"Grocery","subcat":"Vegetables","item":"Corn","store":"Regular Store","online":false,"qty":"","unit":"","amount":60.0,"note":""},{"id":"125","date":"2026-01-31","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Regular Store","online":false,"qty":"","unit":"","amount":30.0,"note":""},{"id":"126","date":"2026-01-31","category":"Grocery","subcat":"Vegetables","item":"Coriander Leaves","store":"Regular Store","online":false,"qty":"","unit":"","amount":20.0,"note":""},{"id":"127","date":"2026-01-31","category":"Transport","subcat":"Bike Maintenance","item":"Bike Servicing","store":"Regular Store","online":false,"qty":"","unit":"","amount":1110.0,"note":""},{"id":"128","date":"2026-02-01","category":"Personal","subcat":"Thomas","item":"Monthly Allowance","store":"Other","online":false,"qty":"","unit":"","amount":2500.0,"note":""},{"id":"129","date":"2026-02-01","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Malayali Store","online":false,"qty":"3.4","unit":"kgs","amount":238.0,"note":""},{"id":"130","date":"2026-02-01","category":"Grocery","subcat":"Eggs","item":"Duck Eggs","store":"Malayali Store","online":false,"qty":"6","unit":"nos","amount":90.0,"note":""},{"id":"131","date":"2026-02-01","category":"Grocery","subcat":"Dining & Takeaway","item":"Juice / Drink","store":"Regular Store","online":false,"qty":"3","unit":"nos","amount":756.0,"note":""},{"id":"132","date":"2026-02-02","category":"Grocery","subcat":"Spices & Condiments","item":"Red Chilli Whole","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":370.0,"note":""},{"id":"133","date":"2026-02-02","category":"Grocery","subcat":"Spices & Condiments","item":"Coriander Seeds","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":160.0,"note":""},{"id":"134","date":"2026-02-02","category":"Household","subcat":"Clothing & Tailoring","item":"Belt","store":"Regular Store","online":false,"qty":"1","unit":"nos","amount":160.0,"note":""},{"id":"135","date":"2026-02-02","category":"Healthcare","subcat":"Medicines","item":"Medicines","store":"Regular Store","online":false,"qty":"","unit":"","amount":160.0,"note":""},{"id":"136","date":"2026-02-02","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Other","online":false,"qty":"45","unit":"ltr","amount":2436.0,"note":""},{"id":"137","date":"2026-02-02","category":"Grocery","subcat":"Bakery & Snacks","item":"Bread","store":"Flipkart","online":true,"qty":"400","unit":"gms","amount":36.0,"note":""},{"id":"138","date":"2026-02-02","category":"Grocery","subcat":"Spices & Condiments","item":"Turmeric Powder","store":"Flipkart","online":true,"qty":"200","unit":"gms","amount":63.0,"note":""},{"id":"139","date":"2026-02-03","category":"Utilities","subcat":"Cooking Gas","item":"Cooking Gas","store":"Other","online":false,"qty":"","unit":"","amount":880.0,"note":""},{"id":"140","date":"2026-02-04","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":200.0,"note":""},{"id":"141","date":"2026-02-04","category":"Grocery","subcat":"Fruits","item":"Grapes","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":150.0,"note":""},{"id":"142","date":"2026-02-04","category":"Household","subcat":"Toiletries & Grooming","item":"Skincare","store":"Regular Store","online":false,"qty":"","unit":"","amount":90.0,"note":""},{"id":"143","date":"2026-02-04","category":"Household","subcat":"Toiletries & Grooming","item":"Skincare","store":"Regular Store","online":false,"qty":"","unit":"","amount":140.0,"note":""},{"id":"144","date":"2026-02-04","category":"Grocery","subcat":"Vegetables","item":"Potato","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":30.0,"note":""},{"id":"145","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Regular Store","online":false,"qty":"4","unit":"kgs","amount":100.0,"note":""},{"id":"146","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Potato","store":"Regular Store","online":false,"qty":"1.25","unit":"kgs","amount":30.0,"note":""},{"id":"147","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Carrot","store":"Regular Store","online":false,"qty":"0.5","unit":"","amount":30.0,"note":""},{"id":"148","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Lady\u2019s Finger Okra","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"149","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Beans","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"150","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Ivy Gourd","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"151","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Papaya","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"152","date":"2026-02-05","category":"Grocery","subcat":"Vegetables","item":"Raw Banana","store":"Regular Store","online":false,"qty":"5","unit":"nos","amount":20.0,"note":""},{"id":"153","date":"2026-02-06","category":"Grocery","subcat":"Fish","item":"Fish (Bangda)","store":"Regular Store","online":false,"qty":"1.215","unit":"kgs","amount":413.0,"note":""},{"id":"154","date":"2026-02-06","category":"Grocery","subcat":"Fish","item":"Fish (Halwa)","store":"Regular Store","online":false,"qty":"0.820","unit":"kgs","amount":656.0,"note":""},{"id":"155","date":"2026-02-06","category":"Grocery","subcat":"Fish","item":"Fish (Soundade)","store":"Regular Store","online":false,"qty":"1.065","unit":"kgs","amount":320.0,"note":""},{"id":"156","date":"2026-02-06","category":"Utilities","subcat":"Housing & Misc","item":"Bike Repair","store":"Regular Store","online":false,"qty":"","unit":"","amount":350.0,"note":""},{"id":"157","date":"2026-02-06","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"3","unit":"kgs","amount":240.0,"note":""},{"id":"158","date":"2026-02-06","category":"Grocery","subcat":"Dry Fruits & Nuts","item":"Cashew","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":860.0,"note":""},{"id":"159","date":"2026-02-06","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":44.0,"note":""},{"id":"160","date":"2026-02-06","category":"Healthcare","subcat":"Fitness","item":"Fitness Equipment","store":"Amazon","online":true,"qty":"","unit":"","amount":704.0,"note":""},{"id":"161","date":"2026-02-07","category":"Utilities","subcat":"Church & Donations","item":"Church Contribution","store":"Other","online":false,"qty":"","unit":"","amount":2000.0,"note":""},{"id":"162","date":"2026-02-07","category":"Household","subcat":"Skincare & Beauty","item":"Cosmetics","store":"Regular Store","online":false,"qty":"","unit":"","amount":260.0,"note":""},{"id":"163","date":"2026-02-07","category":"Grocery","subcat":"Eggs","item":"Eggs","store":"Regular Store","online":false,"qty":"6","unit":"nos","amount":45.0,"note":""},{"id":"164","date":"2026-02-08","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":270.0,"note":""},{"id":"165","date":"2026-02-08","category":"Transport","subcat":"Petrol","item":"Petrol","store":"Other","online":false,"qty":"2","unit":"nos","amount":1038.0,"note":""},{"id":"166","date":"2026-02-08","category":"Grocery","subcat":"Bakery & Snacks","item":"Cake","store":"Regular Store","online":false,"qty":"","unit":"","amount":300.0,"note":""},{"id":"167","date":"2026-02-09","category":"Grocery","subcat":"Staples & Pantry","item":"Wheat","store":"Regular Store","online":false,"qty":"10","unit":"kgs","amount":440.0,"note":""},{"id":"168","date":"2026-02-09","category":"Grocery","subcat":"Fruits","item":"Grapes","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":300.0,"note":""},{"id":"169","date":"2026-02-09","category":"Grocery","subcat":"Fruits","item":"Orange","store":"Regular Store","online":false,"qty":"3","unit":"kgs","amount":220.0,"note":""},{"id":"170","date":"2026-02-10","category":"Grocery","subcat":"Staples & Pantry","item":"Soap","store":"Flipkart","online":true,"qty":"8","unit":"nos","amount":432.0,"note":""},{"id":"171","date":"2026-02-10","category":"Grocery","subcat":"Staples & Pantry","item":"Shaving Cream","store":"Flipkart","online":true,"qty":"","unit":"","amount":48.0,"note":""},{"id":"172","date":"2026-02-10","category":"Grocery","subcat":"Staples & Pantry","item":"Deodorant","store":"Flipkart","online":true,"qty":"3","unit":"nos","amount":226.0,"note":""},{"id":"173","date":"2026-02-10","category":"Grocery","subcat":"Beverages","item":"Tea Powder","store":"Flipkart","online":true,"qty":"1","unit":"kgs","amount":500.0,"note":""},{"id":"174","date":"2026-02-10","category":"Grocery","subcat":"Staples & Pantry","item":"Flour Mill","store":"Other","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"175","date":"2026-02-10","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":100.0,"note":""},{"id":"176","date":"2026-02-10","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":80.0,"note":""},{"id":"177","date":"2026-02-10","category":"Grocery","subcat":"Vegetables","item":"Ginger","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":80.0,"note":""},{"id":"178","date":"2026-02-10","category":"Grocery","subcat":"Vegetables","item":"Lady\u2019s Finger Okra","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":40.0,"note":""},{"id":"179","date":"2026-02-11","category":"Grocery","subcat":"Vegetables","item":"Papaya","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":50.0,"note":""},{"id":"180","date":"2026-02-11","category":"Grocery","subcat":"Vegetables","item":"Snake Gourd","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":50.0,"note":""},{"id":"181","date":"2026-02-11","category":"Grocery","subcat":"Beverages","item":"Coffee Powder","store":"Amazon","online":true,"qty":"500","unit":"gms","amount":314.0,"note":""},{"id":"182","date":"2026-02-12","category":"Household","subcat":"Cleaning Supplies","item":"Washing Detergent","store":"Flipkart","online":true,"qty":"10","unit":"ltr","amount":307.0,"note":""},{"id":"183","date":"2026-02-13","category":"Utilities","subcat":"Housing & Misc","item":"Bike Repair","store":"Other","online":false,"qty":"","unit":"","amount":850.0,"note":""},{"id":"184","date":"2026-02-13","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"185","date":"2026-02-14","category":"Grocery","subcat":"Meat","item":"Chicken","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":130.0,"note":""},{"id":"186","date":"2026-02-14","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"187","date":"2026-02-14","category":"Grocery","subcat":"Dairy","item":"Paneer","store":"Regular Store","online":false,"qty":"250","unit":"gms","amount":90.0,"note":""},{"id":"188","date":"2026-02-14","category":"Grocery","subcat":"Bakery & Snacks","item":"Porotta / Takeaway","store":"Regular Store","online":false,"qty":"10","unit":"nos","amount":242.0,"note":""},{"id":"189","date":"2026-02-15","category":"Grocery","subcat":"Bakery & Snacks","item":"Biscuit","store":"Other","online":false,"qty":"960","unit":"gms","amount":121.0,"note":""},{"id":"190","date":"2026-02-15","category":"Grocery","subcat":"Bakery & Snacks","item":"Porotta / Takeaway","store":"Regular Store","online":false,"qty":"6","unit":"nos","amount":145.0,"note":""},{"id":"191","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Potato","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":30.0,"note":""},{"id":"192","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Green Gourd","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":60.0,"note":""},{"id":"193","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Yam","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":60.0,"note":""},{"id":"194","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Ivy Gourd","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":30.0,"note":""},{"id":"195","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Tomato","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":30.0,"note":""},{"id":"196","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Carrot","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":40.0,"note":""},{"id":"197","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Brinjal","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":30.0,"note":""},{"id":"198","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Cucumber","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":100.0,"note":""},{"id":"199","date":"2026-02-16","category":"Grocery","subcat":"Vegetables","item":"Pumpkin","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":50.0,"note":""},{"id":"200","date":"2026-02-16","category":"Grocery","subcat":"Sweets & Snacks","item":"Snacks","store":"Regular Store","online":false,"qty":"5","unit":"nos","amount":105.0,"note":""},{"id":"201","date":"2026-02-16","category":"Grocery","subcat":"Sweets & Snacks","item":"Chocolates","store":"Regular Store","online":false,"qty":"","unit":"","amount":125.0,"note":""},{"id":"202","date":"2026-02-17","category":"Utilities","subcat":"Housing & Misc","item":"Appliance Repair","store":"Other","online":false,"qty":"","unit":"","amount":500.0,"note":""},{"id":"203","date":"2026-02-18","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"DMart","online":false,"qty":"1","unit":"kgs","amount":44.0,"note":""},{"id":"204","date":"2026-02-18","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"205","date":"2026-02-18","category":"Household","subcat":"Cleaning Supplies","item":"Washing Detergent","store":"DMart","online":false,"qty":"4","unit":"kgs","amount":569.0,"note":""},{"id":"206","date":"2026-02-18","category":"Grocery","subcat":"Staples & Pantry","item":"Basmati Rice","store":"DMart","online":false,"qty":"5.462","unit":"kgs","amount":300.41,"note":""},{"id":"207","date":"2026-02-18","category":"Grocery","subcat":"Staples & Pantry","item":"Medical Supplies","store":"Malayali Store","online":false,"qty":"5","unit":"nos","amount":33.0,"note":""},{"id":"208","date":"2026-02-18","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Malayali Store","online":false,"qty":"1.79","unit":"kgs","amount":125.3,"note":""},{"id":"209","date":"2026-02-18","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Malayali Store","online":false,"qty":"5.99","unit":"kgs","amount":599.0,"note":""},{"id":"210","date":"2026-02-18","category":"Grocery","subcat":"Vegetables","item":"Shallots","store":"Malayali Store","online":false,"qty":"610","unit":"gms","amount":73.0,"note":""},{"id":"211","date":"2026-02-18","category":"Grocery","subcat":"Sweets & Snacks","item":"Indian Sweets","store":"Regular Store","online":false,"qty":"","unit":"","amount":160.0,"note":""},{"id":"212","date":"2026-02-20","category":"Utilities","subcat":"Electricity","item":"Electricity (MSEB)","store":"Other","online":false,"qty":"","unit":"","amount":2530.0,"note":""},{"id":"213","date":"2026-02-20","category":"Utilities","subcat":"Internet","item":"Internet (Microscan)","store":"Other","online":false,"qty":"","unit":"","amount":589.0,"note":""},{"id":"214","date":"2026-02-21","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"215","date":"2026-02-22","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Regular Store","online":false,"qty":"2.34","unit":"kgs","amount":163.0,"note":""},{"id":"216","date":"2026-02-22","category":"Grocery","subcat":"Vegetables","item":"Shallots","store":"Regular Store","online":false,"qty":"780","unit":"gms","amount":94.0,"note":""},{"id":"217","date":"2026-02-22","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"218","date":"2026-02-23","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":340.0,"note":""},{"id":"219","date":"2026-02-23","category":"Utilities","subcat":"Housing & Misc","item":"Aadhaar Card","store":"Other","online":false,"qty":"","unit":"","amount":75.0,"note":""},{"id":"220","date":"2026-02-23","category":"Utilities","subcat":"Church & Donations","item":"Songbooks","store":"Other","online":false,"qty":"","unit":"","amount":75.0,"note":""},{"id":"221","date":"2026-02-23","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"222","date":"2026-02-24","category":"Grocery","subcat":"Staples & Pantry","item":"Pappadam","store":"Malayali Store","online":false,"qty":"","unit":"","amount":50.0,"note":""},{"id":"223","date":"2026-02-25","category":"Healthcare","subcat":"Medical Supplies","item":"Medical Supplies","store":"Regular Store","online":false,"qty":"","unit":"","amount":190.0,"note":""},{"id":"224","date":"2026-02-26","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"225","date":"2026-02-26","category":"Grocery","subcat":"Dairy","item":"IceCream","store":"Regular Store","online":false,"qty":"750","unit":"ml","amount":105.0,"note":""},{"id":"226","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":50.0,"note":""},{"id":"227","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Okra","store":"Regular Store","online":false,"qty":"500","unit":"gms","amount":40.0,"note":""},{"id":"228","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Potato","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":30.0,"note":""},{"id":"229","date":"2026-02-27","category":"Grocery","subcat":"Dairy","item":"IceCream","store":"Regular Store","online":false,"qty":"1.5","unit":"kgs","amount":210.0,"note":""},{"id":"230","date":"2026-02-27","category":"Grocery","subcat":"Bakery & Snacks","item":"Sunfeast Noodles","store":"Flipkart","online":true,"qty":"","unit":"","amount":94.0,"note":""},{"id":"231","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Curry Leaves","store":"Flipkart","online":true,"qty":"","unit":"","amount":9.0,"note":""},{"id":"232","date":"2026-02-27","category":"Grocery","subcat":"Vegetables","item":"Peas Peeled","store":"Flipkart","online":true,"qty":"250","unit":"gms","amount":50.0,"note":""},{"id":"233","date":"2026-02-27","category":"Grocery","subcat":"Spices & Condiments","item":"Salt","store":"Flipkart","online":true,"qty":"1","unit":"kgs","amount":25.0,"note":""},{"id":"234","date":"2026-02-27","category":"Grocery","subcat":"Staples & Pantry","item":"Flour","store":"Flipkart","online":true,"qty":"1","unit":"kgs","amount":47.0,"note":""},{"id":"235","date":"2026-02-27","category":"Household","subcat":"Toiletries & Grooming","item":"String","store":"Meesho","online":true,"qty":"","unit":"","amount":100.0,"note":""},{"id":"236","date":"2026-02-28","category":"Grocery","subcat":"Staples & Pantry","item":"Flour Mill","store":"Regular Store","online":false,"qty":"","unit":"","amount":40.0,"note":""},{"id":"237","date":"2026-03-01","category":"Household","subcat":"Clothing & Tailoring","item":"Shoes","store":"Myntra","online":true,"qty":"","unit":"","amount":583.0,"note":""},{"id":"238","date":"2026-03-01","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":100.0,"note":""},{"id":"239","date":"2026-03-02","category":"Personal","subcat":"Thomas","item":"Monthly Allowance","store":"Other","online":false,"qty":"","unit":"","amount":2500.0,"note":""},{"id":"240","date":"2026-03-02","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":44.0,"note":""},{"id":"241","date":"2026-03-02","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"242","date":"2026-03-02","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Other","online":false,"qty":"30","unit":"ltr","amount":1640.0,"note":""},{"id":"243","date":"2026-03-02","category":"Grocery","subcat":"Staples & Pantry","item":"Matta Rice","store":"Regular Store","online":false,"qty":"10","unit":"kgs","amount":790.0,"note":""},{"id":"244","date":"2026-03-02","category":"Grocery","subcat":"Staples & Pantry","item":"Pappadam","store":"Regular Store","online":false,"qty":"","unit":"","amount":50.0,"note":""},{"id":"245","date":"2026-03-02","category":"Grocery","subcat":"Staples & Pantry","item":"Sunflower Oil","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":170.0,"note":""},{"id":"246","date":"2026-03-03","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":620.0,"note":""},{"id":"247","date":"2026-03-03","category":"Household","subcat":"Cleaning Supplies","item":"Glass Cleaner","store":"Flipkart","online":true,"qty":"1","unit":"ltr","amount":94.0,"note":""},{"id":"248","date":"2026-03-03","category":"Household","subcat":"Cleaning Supplies","item":"Dishwashing Liquid","store":"Flipkart","online":true,"qty":"2","unit":"ltr","amount":214.0,"note":""},{"id":"249","date":"2026-03-03","category":"Grocery","subcat":"Vegetables","item":"Onion","store":"Flipkart","online":true,"qty":"500","unit":"gms","amount":1.0,"note":""},{"id":"250","date":"2026-03-03","category":"Household","subcat":"Toiletries & Grooming","item":"Soap","store":"Flipkart","online":true,"qty":"6","unit":"nos","amount":107.0,"note":""},{"id":"251","date":"2026-03-03","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Flipkart","online":true,"qty":"1","unit":"ltr","amount":30.0,"note":""},{"id":"252","date":"2026-03-03","category":"Personal","subcat":"Amal","item":"Monthly Allowance","store":"Other","online":false,"qty":"","unit":"","amount":500.0,"note":""},{"id":"253","date":"2026-03-03","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":70.0,"note":""},{"id":"254","date":"2026-03-05","category":"Grocery","subcat":"Staples & Pantry","item":"Moong Whole","store":"Regular Store","online":false,"qty":"2","unit":"kgs","amount":260.0,"note":""},{"id":"255","date":"2026-03-05","category":"Grocery","subcat":"Staples & Pantry","item":"Chana Dal","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":70.0,"note":""},{"id":"256","date":"2026-03-05","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"257","date":"2026-03-05","category":"Grocery","subcat":"Fruits","item":"Banana","store":"Regular Store","online":false,"qty":"6","unit":"nos","amount":30.0,"note":""},{"id":"258","date":"2026-03-06","category":"Grocery","subcat":"Fruits","item":"Nendra Banana","store":"Malayali Store","online":false,"qty":"3.12","unit":"kgs","amount":218.0,"note":""},{"id":"259","date":"2026-03-06","category":"Grocery","subcat":"Fruits","item":"Coconut","store":"Malayali Store","online":false,"qty":"3.12","unit":"kgs","amount":312.0,"note":""},{"id":"260","date":"2026-03-09","category":"Grocery","subcat":"Vegetables","item":"Vegetables","store":"Regular Store","online":false,"qty":"","unit":"","amount":360.0,"note":""},{"id":"261","date":"2026-03-09","category":"Grocery","subcat":"Dairy","item":"Milk","store":"Regular Store","online":false,"qty":"1","unit":"ltr","amount":58.0,"note":""},{"id":"262","date":"2026-03-09","category":"Grocery","subcat":"Staples & Pantry","item":"Sugar","store":"Regular Store","online":false,"qty":"1","unit":"kgs","amount":44.0,"note":""},{"id":"263","date":"2026-03-09","category":"Utilities","subcat":"Church & Donations","item":"Offertory","store":"Other","online":false,"qty":"","unit":"","amount":70.0,"note":""},{"id":"264","date":"2026-03-10","category":"Grocery","subcat":"Spices & Condiments","item":"Chilli Powder","store":"Regular Store","online":false,"qty":"100","unit":"gms","amount":58.0,"note":""},{"id":"265","date":"2026-03-10","category":"Grocery","subcat":"Spices & Condiments","item":"Pav Bhaji Masala","store":"Regular Store","online":false,"qty":"50","unit":"gms","amount":48.0,"note":""},{"id":"266","date":"2026-03-10","category":"Utilities","subcat":"Housing & Misc","item":"Aadhaar Card","store":"Other","online":false,"qty":"3","unit":"nos","amount":225.0,"note":""},{"id":"267","date":"2026-03-10","category":"Grocery","subcat":"Bakery & Snacks","item":"Bread","store":"Regular Store","online":false,"qty":"10","unit":"nos","amount":150.0,"note":""}]
 ;
 
 // ═══════════════════════════════════════════
@@ -811,7 +837,7 @@ const ld=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}ca
 const sv=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 
 const DEFAULT_CATS=[
-  {name:'Grocery',icon:'🛒',subs:['Vegetables','Fruits','Fish','Meat','Eggs & Dairy','Dairy','Bakery & Snacks','Dining & Takeaway','Sweets & Snacks','Dry Fruits & Nuts','Beverages','Spices & Condiments','Staples & Pantry']},
+  {name:'Grocery',icon:'🛒',subs:['Vegetables','Fruits','Fish','Meat','Eggs','Dairy','Bakery & Snacks','Dining & Takeaway','Sweets & Snacks','Dry Fruits & Nuts','Beverages','Spices & Condiments','Staples & Pantry']},
   {name:'Household',icon:'🏠',subs:['Cleaning Supplies','Toiletries & Grooming','Skincare & Beauty','Utensils & Kitchenware','Clothing & Tailoring','Home & Garden']},
   {name:'Healthcare',icon:'💊',subs:['Medicines','Hospital & Clinic','Medical Supplies','Fitness']},
   {name:'Utilities',icon:'⚡',subs:['Electricity','Cooking Gas','Internet','Mobile Recharge','Church & Donations','Housing & Misc']},
@@ -819,6 +845,8 @@ const DEFAULT_CATS=[
   {name:'Personal',icon:'👤',subs:['Thomas','Amal','Sissy']},
 ];
 const DEFAULT_STORES=['Regular Store','Malayali Store','DMart','Medical Store','Amazon','Flipkart','Blinkit','Myntra','Meesho','Other'];
+// Nav page icons — editable from Manage
+const DEFAULT_NAV_ICONS={dashboard:'📊',expenses:'📋',entry:'➕',report:'📅',pivot:'⊞',txns:'🗂️',lookup:'🔍',manage:'⚙️',gist:'☁️',shopping:'🛍️',pantry:'🏺'};
 const ONLINE_STORES=new Set(['Amazon','Flipkart','Blinkit','Myntra','Meesho']);
 
 let entries=ld(K.E,null);
@@ -826,6 +854,9 @@ if(!entries){entries=[...SEED];sv(K.E,entries);}
 let cats=ld(K.C,DEFAULT_CATS);
 let stores=ld(K.S,DEFAULT_STORES);
 let gistCfg=ld(K.G,{token:'',id:''});
+let navIcons=ld('kh3_navicons',{...DEFAULT_NAV_ICONS});
+// Sub-category icons stored per cat: {catName: {subName: icon}}
+let subIcons=ld('kh3_subicons',{});
 let shopList=ld(K.SL,[]);   // [{id,item,qty,unit,category,note,done,addedAt}]
 let pantry=ld(K.PT,[]);     // [{id,item,qty,unit,category,addedAt,lastUpdated}]
 
@@ -859,6 +890,42 @@ const fmtF=n=>'₹'+n.toLocaleString('en-IN',{maximumFractionDigits:2});
 const fmtS=n=>'₹'+fmt(n);
 const fmtM=m=>{const[y,mo]=m.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo-1]+' '+y;};
 
+
+// ═══════════════════════════════════════════
+// SIDEBAR (dynamic icons)
+// ═══════════════════════════════════════════
+const SB_PAGES=[
+  {sect:'General'},
+  {id:'dashboard',label:'Dashboard'},
+  {id:'expenses',label:'All Expenses'},
+  {id:'entry',label:'Add Entry'},
+  {sect:'Analyse'},
+  {id:'report',label:'Reports'},
+  {id:'pivot',label:'Pivot'},
+  {id:'txns',label:'Transactions'},
+  {id:'lookup',label:'Item Lookup'},
+  {sect:'Settings'},
+  {id:'manage',label:'Manage'},
+  {id:'gist',label:'Sync / Gist'},
+  {sect:'Household'},
+  {id:'shopping',label:'Shopping List'},
+  {id:'pantry',label:'Pantry'},
+];
+let _currentPage='dashboard';
+function renderSidebar(){
+  const w=document.getElementById('sb-nav-links');
+  if(!w)return;
+  w.innerHTML=SB_PAGES.map(p=>{
+    if(p.sect) return`<div class="sb-sect">${p.sect}</div>`;
+    const ic=navIcons[p.id]||DEFAULT_NAV_ICONS[p.id]||'📌';
+    const isOn=_currentPage===p.id;
+    return`<div class="nav${isOn?' on':''}" onclick="go('${p.id}',this)">
+      <div class="nav-ic">${renderIcon(ic)}</div>
+      <span>${p.label}</span>
+    </div>`;
+  }).join('');
+}
+
 // ═══════════════════════════════════════════
 // CLOCK
 // ═══════════════════════════════════════════
@@ -873,10 +940,10 @@ const fmtM=m=>{const[y,mo]=m.split('-');return['Jan','Feb','Mar','Apr','May','Ju
 // ═══════════════════════════════════════════
 let charts={};
 function go(id,el){
+  _currentPage=id;
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));
   document.getElementById('page-'+id).classList.add('on');
-  if(el)el.classList.add('on');
+  renderSidebar();
   ({dashboard:renderDash,expenses:renderExpenses,entry:renderEntry,report:renderReportPage,pivot:renderPivotPage,txns:renderTxnsPage,lookup:()=>{},manage:renderManage,gist:renderGist,shopping:renderShopPage,pantry:renderPantryPage})[id]?.();
 }
 
@@ -898,70 +965,142 @@ function renderDash(){
   const now=new Date();
   const today=now.toISOString().slice(0,10);
   const mPfx=today.slice(0,7);
+  // prev month
+  const pm=new Date(now.getFullYear(),now.getMonth()-1,1);
+  const pmPfx=pm.toISOString().slice(0,7);
+  // week start (Mon)
   const wk=new Date(now);wk.setDate(now.getDate()-((now.getDay()+6)%7));
   const wkS=wk.toISOString().slice(0,10);
+  // year
+  const yrPfx=today.slice(0,4);
 
-  const todayEs=entries.filter(e=>e.date===today);
   const mEs=entries.filter(e=>e.date.startsWith(mPfx));
+  const pmEs=entries.filter(e=>e.date.startsWith(pmPfx));
   const wkEs=entries.filter(e=>e.date>=wkS&&e.date<=today);
-  const total=entries.reduce((s,e)=>s+e.amount,0);
-  const mTot=mEs.reduce((s,e)=>s+e.amount,0);
-  const wkTot=wkEs.reduce((s,e)=>s+e.amount,0);
-  const dAvg=mTot/(now.getDate()||1);
+  const todayEs=entries.filter(e=>e.date===today);
+  const yrEs=entries.filter(e=>e.date.startsWith(yrPfx));
 
-  document.getElementById('dash-stats').innerHTML=[
-    {l:'Total Spend',v:total,ic:'💸',bg:'#EEF1FD',b:'All time'},
-    {l:'This Month',v:mTot,ic:'📅',bg:'#F3E8FF',b:fmtM(mPfx)},
-    {l:'This Week',v:wkTot,ic:'📊',bg:'#EBF9EF',b:mEs.length+' txns'},
-    {l:'Daily Avg',v:dAvg,ic:'⚡',bg:'#FFF8E1',b:'This month'},
-  ].map((s,i)=>`<div class="stat anim" style="animation-delay:${i*.06}s">
+  const mTot=mEs.reduce((s,e)=>s+e.amount,0);
+  const pmTot=pmEs.reduce((s,e)=>s+e.amount,0);
+  const wkTot=wkEs.reduce((s,e)=>s+e.amount,0);
+  const todayTot=todayEs.reduce((s,e)=>s+e.amount,0);
+  const yrTot=yrEs.reduce((s,e)=>s+e.amount,0);
+  const dAvg=mTot/(now.getDate()||1);
+  const pmDays=new Date(now.getFullYear(),now.getMonth(),0).getDate();
+  const pmAvg=pmTot/(pmDays||1);
+
+  // Stat cards
+  const cards=[
+    {
+      l:'This Month',
+      v:mTot,
+      ic:'📅',
+      bg:'#EEF1FD',
+      sub: fmtS(yrTot)+' this year',
+      sub2: null
+    },
+    {
+      l:'This Week',
+      v:wkTot,
+      ic:'📊',
+      bg:'#F3E8FF',
+      sub: wkEs.length+' expense'+(wkEs.length!==1?'s':''),
+      sub2: null
+    },
+    {
+      l:"Today",
+      v:todayTot,
+      ic:'☀️',
+      bg:'#EBF9EF',
+      sub:'Daily avg '+fmtS(dAvg),
+      sub2:null
+    },
+    {
+      l:'Daily Avg',
+      v:dAvg,
+      ic:'⚡',
+      bg:'#FFF8E1',
+      sub: fmtM(mPfx),
+      sub2: 'Last month: '+fmtS(pmAvg)
+    },
+  ];
+
+  document.getElementById('dash-stats').innerHTML=cards.map((s,i)=>`<div class="stat anim" style="animation-delay:${i*.06}s">
     <div class="stat-icon" style="background:${s.bg}">${s.ic}</div>
     <div class="stat-lbl">${s.l}</div>
     <div class="stat-val"><span class="cur">₹</span>${fmt(s.v)}</div>
-    <div class="stat-badge b-n">${s.b}</div>
+    <div class="stat-badge b-n">${s.sub}</div>
+    ${s.sub2?`<div style="font-size:.58rem;color:var(--t3);margin-top:2px">${s.sub2}</div>`:''}
   </div>`).join('');
 
-  // Monthly bar
-  const months=[...new Set(entries.map(e=>e.date.slice(0,7)))].sort();
-  const mVals=months.map(m=>entries.filter(e=>e.date.startsWith(m)).reduce((s,e)=>s+e.amount,0));
-  dc('monthly');
-  charts.monthly=new Chart(document.getElementById('c-monthly'),{type:'bar',data:{labels:months.map(fmtM),datasets:[{data:mVals,backgroundColor:months.map((_,i)=>i===months.length-1?'rgba(67,97,238,0.35)':'rgba(67,97,238,0.75)'),borderColor:'#4361EE',borderWidth:2,borderRadius:8,borderSkipped:false}]},options:{...BASE_OPTS,scales:moneyAxis()}});
+  // ── Last 12 weeks bar chart ────────────────
+  // Build 12 week buckets ending today
+  const weeks=[];
+  for(let w=11;w>=0;w--){
+    const wEnd=new Date(now);wEnd.setDate(now.getDate()-w*7);
+    const wStart=new Date(wEnd);wStart.setDate(wEnd.getDate()-6);
+    const wS=wStart.toISOString().slice(0,10);
+    const wE=wEnd.toISOString().slice(0,10);
+    const lbl='W'+(12-w)+'\n'+wStart.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    const tot=entries.filter(e=>e.date>=wS&&e.date<=wE).reduce((s,e)=>s+e.amount,0);
+    weeks.push({lbl,tot,isCurrent:w===0});
+  }
+  dc('weeks');
+  charts.weeks=new Chart(document.getElementById('c-weeks'),{
+    type:'bar',
+    data:{
+      labels:weeks.map(w=>w.lbl),
+      datasets:[{
+        data:weeks.map(w=>w.tot),
+        backgroundColor:weeks.map(w=>w.isCurrent?'rgba(67,97,238,0.9)':'rgba(67,97,238,0.55)'),
+        borderColor:weeks.map(w=>w.isCurrent?'#4361EE':'rgba(67,97,238,0.3)'),
+        borderWidth:1.5,borderRadius:7,borderSkipped:false
+      }]
+    },
+    options:{...BASE_OPTS,scales:moneyAxis()}
+  });
 
-  // Donut
-  const cm={};entries.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});
-  const cL=Object.keys(cm),cV=cL.map(l=>cm[l]);
+  // ── Category donut — THIS MONTH ONLY ──────
+  const cm={};mEs.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});
+  const cL=Object.keys(cm).sort((a,b)=>cm[b]-cm[a]);
+  const cV=cL.map(l=>cm[l]);
   dc('donut');
-  charts.donut=new Chart(document.getElementById('c-donut'),{type:'doughnut',data:{labels:cL,datasets:[{data:cV,backgroundColor:cL.map(c=>catCol(c)),borderWidth:3,borderColor:'#fff',hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtF(ctx.raw)}}}}});
-  const totC=cV.reduce((a,b)=>a+b,0);
-  document.getElementById('cat-legend').innerHTML=cL.sort((a,b)=>cm[b]-cm[a]).map(c=>`<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid var(--border)">
+  charts.donut=new Chart(document.getElementById('c-donut'),{
+    type:'doughnut',
+    data:{labels:cL,datasets:[{data:cV,backgroundColor:cL.map(c=>catCol(c)),borderWidth:3,borderColor:'#fff',hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'66%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtF(ctx.raw)}}}}
+  });
+  document.getElementById('cat-legend').innerHTML=cL.map(c=>`<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid var(--border)">
     <div style="width:9px;height:9px;border-radius:2px;background:${catCol(c)};flex-shrink:0"></div>
     <div style="flex:1;font-size:.75rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${catIcon(c)} ${c}</div>
     <div style="font-size:.75rem;font-weight:700;font-family:var(--font2)">${fmtS(cm[c])}</div>
   </div>`).join('');
 
-  // Online/Offline bar
-  const onAmt=entries.filter(e=>e.online).reduce((s,e)=>s+e.amount,0);
-  const offAmt=entries.filter(e=>!e.online).reduce((s,e)=>s+e.amount,0);
-  dc('oo');
-  charts.oo=new Chart(document.getElementById('c-oo'),{type:'bar',data:{labels:months.map(fmtM),datasets:[
-    {label:'Online',data:months.map(m=>entries.filter(e=>e.date.startsWith(m)&&e.online).reduce((s,e)=>s+e.amount,0)),backgroundColor:'rgba(67,97,238,0.75)',borderRadius:6,borderSkipped:false},
-    {label:'Offline',data:months.map(m=>entries.filter(e=>e.date.startsWith(m)&&!e.online).reduce((s,e)=>s+e.amount,0)),backgroundColor:'rgba(45,198,83,0.7)',borderRadius:6,borderSkipped:false}
-  ]},options:{...BASE_OPTS,plugins:{legend:{display:true,position:'top',labels:{color:'#5A6282',font:{size:10,family:'Plus Jakarta Sans'},boxWidth:10,padding:8}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmtF(ctx.raw)}}},scales:{...moneyAxis(),x:{...moneyAxis().x,stacked:false}}}});
+  // ── Pantry snapshot ────────────────────────
+  const ptItems=[...pantry].sort((a,b)=>(parseFloat(a.qty)||0)-(parseFloat(b.qty)||0)).slice(0,6);
+  document.getElementById('dash-pantry').innerHTML=ptItems.length
+    ?ptItems.map(p=>{
+        const qty=parseFloat(p.qty)||0;
+        const cls=qty===0?'out-stock':qty<2?'low-stock':'';
+        return`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+          <div style="width:26px;height:26px;border-radius:6px;background:${p.category?catCol(p.category)+'18':'var(--bg)'};display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0">${p.category?catIcon(p.category):'🏺'}</div>
+          <div style="flex:1;font-size:.75rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.item}</div>
+          <div style="font-size:.72rem;font-weight:700;${qty<2?'color:var(--orange)':''}" class="${cls}">${qty}${p.unit?' '+p.unit:''}</div>
+        </div>`;}).join('')
+    :'<div style="padding:14px;text-align:center;font-size:.73rem;color:var(--t3)">Pantry is empty</div>';
 
-  // Stores
-  const sm={};entries.forEach(e=>{if(e.store&&e.store!=='Other')sm[e.store]=(sm[e.store]||0)+e.amount;});
-  const sArr=Object.entries(sm).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  const mx=sArr[0]?.[1]||1;
-  document.getElementById('store-list').innerHTML=sArr.map(([s,v],i)=>`<div class="store-row">
-    <div class="store-av" style="background:${STORE_COL[i%STORE_COL.length]}">${s[0]}</div>
-    <div style="flex:1;min-width:0">
-      <div class="store-nm">${s}</div>
-      <div class="prog"><div class="prog-f" style="width:${(v/mx*100).toFixed(0)}%;background:${STORE_COL[i%STORE_COL.length]}"></div></div>
-    </div>
-    <div class="store-amt">${fmtS(v)}</div>
-  </div>`).join('');
+  // ── Shopping list snapshot ─────────────────
+  const slPending=shopList.filter(x=>!x.done).slice(0,6);
+  document.getElementById('dash-shopping').innerHTML=slPending.length
+    ?slPending.map(x=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <input type="checkbox" class="si-cb" onchange="toggleShopDone('${x.id}');renderDash()">
+        <div style="flex:1;font-size:.75rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x.item}${x.qty?' · '+x.qty+(x.unit||''):''}</div>
+        <div style="font-size:.62rem;color:var(--t3)">${x.category||''}</div>
+      </div>`).join('')
+    +'<div style="font-size:.65rem;color:var(--t3);padding:6px 0">'+shopList.filter(x=>x.done).length+' done</div>'
+    :'<div style="padding:14px;text-align:center;font-size:.73rem;color:var(--t3)">Shopping list is empty</div>';
 
-  // Recent mini
+  // ── Recent ─────────────────────────────────
   const rec=[...entries].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
   document.getElementById('recent-mini').innerHTML=rec.map(e=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
     <div style="width:28px;height:28px;border-radius:7px;background:${catCol(e.category)}22;display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0">${catIcon(e.category)}</div>
@@ -1012,8 +1151,24 @@ function buildTable(data,cols,onSort){
 // ALL EXPENSES
 // ═══════════════════════════════════════════
 function renderExpenses(){
-  populateFilters('fe-month','fe-cat','fe-sub','fe-store');
+  // Build month tabs
+  const months=[...new Set(entries.map(e=>e.date.slice(0,7)))].sort().reverse();
+  const curM=new Date().toISOString().slice(0,7);
+  // Set default tab to current month if not already set
+  if(!window._expTab) window._expTab = months.includes(curM) ? curM : (months[0]||'all');
+  const tabBar=document.getElementById('exp-month-tabs');
+  const allTabs=[{v:'all',l:'All Time'},...months.map(m=>({v:m,l:fmtM(m)}))];
+  tabBar.innerHTML=allTabs.map(t=>`<button class="chip${window._expTab===t.v?' sc':''}" onclick="setExpTab('${t.v}')">${t.l}</button>`).join('');
+  // Populate cat/sub/store filters (no month filter — tab handles it)
+  const cEl=document.getElementById('fe-cat');if(cEl){const c=cEl.value;cEl.innerHTML='<option value="">All Categories</option>'+cats.map(ct=>`<option value="${ct.name}"${ct.name===c?' selected':''}>${ct.icon} ${ct.name}</option>`).join('');}
+  const sbEl=document.getElementById('fe-sub');if(sbEl){const c=sbEl.value;const subs=[...new Set(entries.map(e=>e.subcat).filter(Boolean))].sort();sbEl.innerHTML='<option value="">All Sub-cats</option>'+subs.map(s=>`<option${s===c?' selected':''}>${s}</option>`).join('');}
+  const stEl=document.getElementById('fe-store');if(stEl){const c=stEl.value;const sts=[...new Set(entries.map(e=>e.store).filter(Boolean))].sort();stEl.innerHTML='<option value="">All Stores</option>'+sts.map(s=>`<option${s===c?' selected':''}>${s}</option>`).join('');}
   renderExpTable();
+}
+function setExpTab(v){
+  window._expTab=v;
+  window._expPage=0;
+  renderExpenses();
 }
 function populateFilters(mId,cId,sbId,stId){
   const months=[...new Set(entries.map(e=>e.date.slice(0,7)))].sort().reverse();
@@ -1040,13 +1195,52 @@ function filterEntries(mId,cId,sbId,stId,modeId,qId){
   return es;
 }
 function renderExpTable(){
-  let es=filterEntries('fe-month','fe-cat','fe-sub','fe-store','fe-mode','fe-q');
+  if(!window._expPage) window._expPage=0;
+  // Apply tab filter
+  let es=[...entries];
+  const tab=window._expTab||'all';
+  if(tab!=='all') es=es.filter(e=>e.date.startsWith(tab));
+  // Apply other filters
+  const cat=document.getElementById('fe-cat')?.value;
+  const sub=document.getElementById('fe-sub')?.value;
+  const st=document.getElementById('fe-store')?.value;
+  const md=document.getElementById('fe-mode')?.value;
+  const q=document.getElementById('fe-q')?.value?.toLowerCase().trim();
+  if(cat)es=es.filter(e=>e.category===cat);
+  if(sub)es=es.filter(e=>e.subcat===sub);
+  if(st)es=es.filter(e=>e.store===st);
+  if(md==='online')es=es.filter(e=>e.online);
+  if(md==='offline')es=es.filter(e=>!e.online);
+  if(q)es=es.filter(e=>(e.item||'').toLowerCase().includes(q)||(e.note||'').toLowerCase().includes(q));
+  // Sort
   const col=sortSt.col,dir=sortSt.dir;
   es.sort((a,b)=>{const av=a[col]??'',bv=b[col]??'';return col==='amount'?(dir==='asc'?av-bv:bv-av):(dir==='asc'?String(av).localeCompare(String(bv)):String(bv).localeCompare(String(av)));});
+  // Per-page
+  const pp=document.getElementById('fe-perpage')?.value||'100';
+  const perPage=pp==='all'?es.length:parseInt(pp);
+  const totalPages=Math.ceil(es.length/perPage)||1;
+  if(window._expPage>=totalPages) window._expPage=totalPages-1;
+  const pageEs=es.slice(window._expPage*perPage,(window._expPage+1)*perPage);
+  // Title
+  const titleEl=document.getElementById('exp-title');
+  if(titleEl) titleEl.textContent=tab==='all'?'All Expenses':fmtM(tab)+' Expenses';
   document.getElementById('exp-count').textContent=es.length+' entries · '+fmtF(es.reduce((s,e)=>s+e.amount,0));
-  document.getElementById('exp-table').innerHTML=buildTable(es,['date','item','category','subcat','store','online','qty','unit','amount'],'sortExpBy');
+  document.getElementById('exp-table').innerHTML=buildTable(pageEs,['date','item','category','subcat','store','online','qty','unit','amount'],'sortExpBy');
+  // Pagination
+  const pg=document.getElementById('exp-pagination');
+  if(pp==='all'||totalPages<=1){pg.innerHTML='';return;}
+  let btns='';
+  btns+=`<button class="qty-btn" onclick="goExpPage(${window._expPage-1})" ${window._expPage===0?'disabled':''}>‹</button>`;
+  // Show max 7 page buttons
+  const start=Math.max(0,window._expPage-3);
+  const end=Math.min(totalPages-1,start+6);
+  for(let i=start;i<=end;i++){btns+=`<button class="qty-btn${i===window._expPage?' sc':''}" onclick="goExpPage(${i})" style="${i===window._expPage?'background:var(--accent);color:#fff;border-color:var(--accent)':''}">${i+1}</button>`;}
+  btns+=`<button class="qty-btn" onclick="goExpPage(${window._expPage+1})" ${window._expPage===totalPages-1?'disabled':''}>›</button>`;
+  btns+=`<span style="font-size:.68rem;color:var(--t3);margin-left:4px">Page ${window._expPage+1} of ${totalPages}</span>`;
+  pg.innerHTML=btns;
 }
-function sortExpBy(col){if(sortSt.col===col)sortSt.dir=sortSt.dir==='asc'?'desc':'asc';else{sortSt.col=col;sortSt.dir='desc';}renderExpTable();}
+function goExpPage(p){window._expPage=p;renderExpTable();document.getElementById('page-expenses').scrollTo(0,0);}
+function sortExpBy(col){if(sortSt.col===col)sortSt.dir=sortSt.dir==='asc'?'desc':'asc';else{sortSt.col=col;sortSt.dir='desc';}window._expPage=0;renderExpTable();}
 
 // ═══════════════════════════════════════════
 // ENTRY PAGE
@@ -1144,7 +1338,7 @@ function renderReportPage(){
   const rM=document.getElementById('r-month');
   rM.innerHTML=months.map(m=>`<option value="${m}"${m===now?' selected':''}>${fmtM(m)}</option>`).join('');
   const rC=document.getElementById('r-cat');
-  rC.innerHTML='<option value="">All Categories</option>'+cats.map(c=>`<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
+  rC.innerHTML='<option value="">All Categories</option>'+cats.map(c=>`<option value="${c.name}">${renderIcon(c.icon)} ${c.name}</option>`).join('');
   renderReport();
 }
 function toggleRType(){
@@ -1167,10 +1361,8 @@ function renderReport(){
   const byDate={};es.forEach(e=>{byDate[e.date]=(byDate[e.date]||0)+e.amount;});
   const days=Object.keys(byDate).length||1;
   const topCat=Object.entries(es.reduce((m,e)=>{m[e.category]=(m[e.category]||0)+e.amount;return m;},{})).sort((a,b)=>b[1]-a[1])[0];
-  const onTot=es.filter(e=>e.online).reduce((s,e)=>s+e.amount,0);
-  const offTot=es.filter(e=>!e.online).reduce((s,e)=>s+e.amount,0);
 
-  // KPIs
+  // ── KPIs ─────────────────────────────────
   document.getElementById('r-sum').innerHTML=[
     {l:'Total Spend',v:fmtF(total)},
     {l:'Transactions',v:es.length},
@@ -1179,74 +1371,100 @@ function renderReport(){
     {l:'Top Category',v:topCat?`${catIcon(topCat[0])} ${topCat[0]}`:'—'},
   ].map(s=>`<div class="rsm"><div class="rsm-lbl">${s.l}</div><div class="rsm-val">${s.v}</div></div>`).join('');
 
-  // Online / Offline / Other breakdown
-  document.getElementById('r-oo').innerHTML=`
-    <div class="oo-card oo-online">
-      <div class="oo-lbl" style="color:var(--accent)">📦 Online</div>
-      <div class="oo-val" style="color:var(--accent)">${fmtF(onTot)}</div>
-      <div class="oo-pct" style="color:var(--accent)">${total?((onTot/total)*100).toFixed(1)+'%':0}</div>
-      <div style="font-size:.65rem;color:var(--t3);margin-top:4px">${es.filter(e=>e.online).length} transactions</div>
-    </div>
-    <div class="oo-card oo-offline">
-      <div class="oo-lbl" style="color:var(--green)">🏪 Offline</div>
-      <div class="oo-val" style="color:var(--green)">${fmtF(offTot)}</div>
-      <div class="oo-pct" style="color:var(--green)">${total?((offTot/total)*100).toFixed(1)+'%':0}</div>
-      <div style="font-size:.65rem;color:var(--t3);margin-top:4px">${es.filter(e=>!e.online).length} transactions</div>
-    </div>
-    <div class="oo-card oo-other">
-      <div class="oo-lbl" style="color:var(--orange)">📊 Ratio</div>
-      <div class="oo-val" style="color:var(--orange)">${total?Math.round((offTot/total)*100):0}% offline</div>
-      <div class="oo-pct" style="color:var(--orange)">Avg online: ${fmtF(es.filter(e=>e.online).length?onTot/es.filter(e=>e.online).length:0)}</div>
-      <div style="font-size:.65rem;color:var(--t3);margin-top:4px">Avg offline: ${fmtF(es.filter(e=>!e.online).length?offTot/es.filter(e=>!e.online).length:0)}</div>
-    </div>`;
-
-  // Cat pie
+  // ── Category pie ─────────────────────────
   const cm={};es.forEach(e=>{cm[e.category]=(cm[e.category]||0)+e.amount;});
-  const cL=Object.keys(cm),cV=cL.map(l=>cm[l]);
+  const cL=Object.keys(cm).sort((a,b)=>cm[b]-cm[a]),cV=cL.map(l=>cm[l]);
   dc('rccat');
   charts.rccat=new Chart(document.getElementById('rc-cat'),{type:'pie',data:{labels:cL,datasets:[{data:cV,backgroundColor:cL.map(c=>catCol(c)),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#5A6282',font:{size:10,family:'Plus Jakarta Sans'},padding:6,boxWidth:10}},tooltip:{callbacks:{label:ctx=>fmtF(ctx.raw)+' ('+((ctx.raw/cV.reduce((a,b)=>a+b,0))*100).toFixed(1)+'%)'}}}}});
 
-  // Daily line
+  // ── Daily line ───────────────────────────
   const allD=[...new Set(es.map(e=>e.date))].sort();
   dc('rcdaily');
   charts.rcdaily=new Chart(document.getElementById('rc-daily'),{type:'line',data:{labels:allD.map(d=>d.slice(5)),datasets:[{label:'Spend',data:allD.map(d=>byDate[d]||0),borderColor:'#4361EE',backgroundColor:'rgba(67,97,238,.08)',fill:true,tension:.3,pointRadius:3,pointBackgroundColor:'#4361EE'}]},options:{...BASE_OPTS,scales:moneyAxis()}});
 
-  // Sub-cat horizontal bar
+  // ── Sub-cat VERTICAL bar (top 12, sorted desc) ──
   const sm={};es.forEach(e=>{if(e.subcat)sm[e.subcat]=(sm[e.subcat]||0)+e.amount;});
-  const sSorted=Object.entries(sm).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const sSorted=Object.entries(sm).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  // Colour by parent category
+  const subCatCol=(sub)=>{const c=cats.find(c=>c.subs.includes(sub));return c?catCol(c.name):PALETTE[0];};
   dc('rcsub');
-  charts.rcsub=new Chart(document.getElementById('rc-sub'),{type:'bar',data:{labels:sSorted.map(x=>x[0]),datasets:[{data:sSorted.map(x=>x[1]),backgroundColor:PALETTE,borderRadius:5}]},options:{indexAxis:'y',...BASE_OPTS,scales:moneyAxisH()}});
+  charts.rcsub=new Chart(document.getElementById('rc-sub'),{
+    type:'bar',
+    data:{labels:sSorted.map(x=>x[0]),datasets:[{data:sSorted.map(x=>x[1]),backgroundColor:sSorted.map(x=>subCatCol(x[0])+'CC'),borderColor:sSorted.map(x=>subCatCol(x[0])),borderWidth:1.5,borderRadius:6,borderSkipped:false}]},
+    options:{...BASE_OPTS,scales:moneyAxis()}
+  });
 
-  // Store horizontal bar
+  // ── Store pie with online/offline labels ──
   const stm={};es.forEach(e=>{if(e.store)stm[e.store]=(stm[e.store]||0)+e.amount;});
   const stSorted=Object.entries(stm).sort((a,b)=>b[1]-a[1]).slice(0,8);
   dc('rcstore');
-  charts.rcstore=new Chart(document.getElementById('rc-store'),{type:'bar',data:{labels:stSorted.map(x=>x[0]),datasets:[{data:stSorted.map(x=>x[1]),backgroundColor:STORE_COL,borderRadius:5}]},options:{indexAxis:'y',...BASE_OPTS,scales:moneyAxisH()}});
+  charts.rcstore=new Chart(document.getElementById('rc-store'),{
+    type:'pie',
+    data:{labels:stSorted.map(x=>x[0]),datasets:[{data:stSorted.map(x=>x[1]),backgroundColor:STORE_COL,borderWidth:3,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#5A6282',font:{size:10,family:'Plus Jakarta Sans'},padding:5,boxWidth:9}},tooltip:{callbacks:{label:ctx=>ctx.label+': '+fmtF(ctx.raw)+(ONLINE_STORES.has(ctx.label)?' 📦':' 🏪')}}}}
+  });
+  // Online/Offline summary under store chart
+  const onTot=es.filter(e=>e.online).reduce((s,e)=>s+e.amount,0);
+  const offTot=total-onTot;
+  document.getElementById('rc-store-oo').innerHTML=`
+    <span style="font-size:.7rem;font-weight:700;color:var(--accent)">📦 Online: ${fmtF(onTot)} (${total?((onTot/total)*100).toFixed(0):'0'}%)</span>
+    <span style="font-size:.7rem;font-weight:700;color:var(--green)">🏪 Offline: ${fmtF(offTot)} (${total?((offTot/total)*100).toFixed(0):'0'}%)</span>`;
 
-  // Per-Category Subcat tables
+  // ── Sub-category detail tables — grid aligned ──
   const byCat={};
   es.forEach(e=>{if(!byCat[e.category])byCat[e.category]={};byCat[e.category][e.subcat||'Other']=(byCat[e.category][e.subcat||'Other']||0)+e.amount;});
-  document.getElementById('r-subcat-tables').innerHTML=Object.entries(byCat).sort((a,b)=>Object.values(b[1]).reduce((s,v)=>s+v,0)-Object.values(a[1]).reduce((s,v)=>s+v,0)).map(([cat,subs])=>{
-    const catTot=Object.values(subs).reduce((s,v)=>s+v,0);
-    const rows=Object.entries(subs).sort((a,b)=>b[1]-a[1]);
-    return`<div class="subcat-section">
-      <div class="subcat-section-title" style="color:${catCol(cat)}">${catIcon(cat)} ${cat} — ${fmtF(catTot)}</div>
-      <table style="width:100%"><thead><tr>
-        <th style="font-size:.58rem;text-align:left;padding:5px 8px;color:var(--t3)">Sub-category</th>
-        <th style="font-size:.58rem;text-align:right;padding:5px 8px;color:var(--t3)">Amount</th>
-        <th style="font-size:.58rem;text-align:right;padding:5px 8px;color:var(--t3)">%</th>
-        <th style="padding:5px 8px">Share</th>
-      </tr></thead><tbody>
-      ${rows.map(([sub,amt])=>{const pct=(amt/catTot*100).toFixed(1);return`<tr>
-        <td style="padding:5px 8px;font-size:.78rem;font-weight:600">${sub}</td>
-        <td style="padding:5px 8px;font-family:var(--font2);text-align:right;font-size:.78rem;font-weight:700">${fmtF(amt)}</td>
-        <td style="padding:5px 8px;text-align:right;font-size:.72rem;color:var(--t2)">${pct}%</td>
-        <td style="padding:5px 8px"><div class="prog"><div class="prog-f" style="width:${pct}%;background:${catCol(cat)}"></div></div></td>
-      </tr>`;}).join('')}
-      </tbody></table>
-    </div>`;
-  }).join('');
+  const catsSorted=Object.entries(byCat).sort((a,b)=>Object.values(b[1]).reduce((s,v)=>s+v,0)-Object.values(a[1]).reduce((s,v)=>s+v,0));
+  document.getElementById('r-subcat-tables').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:4px 0">
+    ${catsSorted.map(([cat,subs])=>{
+      const catTot=Object.values(subs).reduce((s,v)=>s+v,0);
+      const rows=Object.entries(subs).sort((a,b)=>b[1]-a[1]);
+      const colr=catCol(cat);
+      return`<div style="border:1.5px solid ${colr}28;border-radius:10px;overflow:hidden">
+        <div style="background:${colr}12;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid ${colr}20">
+          <span style="font-size:.78rem;font-weight:800;color:${colr}">${catIcon(cat)} ${cat}</span>
+          <span style="font-size:.78rem;font-weight:800;font-family:var(--font2);color:${colr}">${fmtF(catTot)}</span>
+        </div>
+        <div>
+          ${rows.map(([sub,amt])=>{
+            const pct=(amt/catTot*100).toFixed(1);
+            const subIc=getSubIcon(cat,sub);
+            return`<div style="display:grid;grid-template-columns:16px 1fr auto auto;gap:6px;align-items:center;padding:6px 12px;border-bottom:1px solid var(--border)">
+              <span style="font-size:.75rem">${subIc}</span>
+              <span style="font-size:.76rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sub}</span>
+              <span style="font-size:.73rem;font-weight:700;font-family:var(--font2);color:var(--t1)">${fmtF(amt)}</span>
+              <span style="font-size:.65rem;color:var(--t3);font-weight:600;min-width:32px;text-align:right">${pct}%</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
 }
+
+function doReportLookup(){
+  const term=document.getElementById('rl-item').value.trim().toLowerCase();
+  const per=document.getElementById('rl-period').value;
+  if(!term)return toast('Enter an item name','tr');
+  const now=new Date();
+  let es=entries.filter(e=>e.item.toLowerCase().includes(term));
+  if(per==='month')es=es.filter(e=>e.date.startsWith(now.toISOString().slice(0,7)));
+  else if(per==='3m'){const p=new Date(now);p.setMonth(p.getMonth()-3);es=es.filter(e=>new Date(e.date)>=p);}
+  else if(per==='year')es=es.filter(e=>e.date.startsWith(''+now.getFullYear()));
+  if(!es.length){document.getElementById('rl-result').innerHTML='<div style="padding:14px;color:var(--t3);font-size:.8rem">No results found</div>';return;}
+  const tot=es.reduce((s,e)=>s+e.amount,0);
+  const wQ=es.filter(e=>e.qty&&parseFloat(e.qty)>0);
+  const avgP=wQ.length?wQ.reduce((s,e)=>s+(e.amount/parseFloat(e.qty)),0)/wQ.length:0;
+  const onAmt=es.filter(e=>e.online).reduce((s,e)=>s+e.amount,0);
+  document.getElementById('rl-result').innerHTML=`
+    <div class="ls-grid" style="margin-bottom:12px">
+      <div class="ls-item"><div class="ls-val">${fmtF(tot)}</div><div class="ls-lbl">Total Spent</div></div>
+      <div class="ls-item"><div class="ls-val">${es.length}</div><div class="ls-lbl">Purchases</div></div>
+      <div class="ls-item"><div class="ls-val">${avgP?'₹'+avgP.toFixed(2)+'/unit':'—'}</div><div class="ls-lbl">Avg Unit Price</div></div>
+      <div class="ls-item"><div class="ls-val">${fmtF(onAmt)} <span style="font-size:.65rem;color:var(--t3)">online</span></div><div class="ls-lbl">Online vs Offline</div></div>
+    </div>
+    <div class="tbl-wrap">${buildTable(es.sort((a,b)=>new Date(b.date)-new Date(a.date)),['date','item','category','subcat','store','online','qty','unit','amount'],'')}</div>`;
+}
+
 
 // ═══════════════════════════════════════════
 // PIVOT
@@ -1347,22 +1565,36 @@ function doLookup(){
 // ═══════════════════════════════════════════
 // MANAGE
 // ═══════════════════════════════════════════
+function getSubIcon(catName,subName){
+  return(subIcons[catName]&&subIcons[catName][subName])||'•';
+}
+function setSubIcon(catName,subName,ic){
+  if(!subIcons[catName])subIcons[catName]={};
+  subIcons[catName][subName]=ic;
+  sv('kh3_subicons',subIcons);
+}
+
 function renderManage(){
   document.getElementById('data-cnt').textContent=entries.length;
   document.getElementById('data-last').textContent=entries[0]?.date||'—';
   renderManageCats();
   renderManageStores();
+  renderManageNavIcons();
 }
 function renderManageCats(){
   document.getElementById('manage-cats').innerHTML=cats.map((c,ci)=>`
     <div class="cat-manage-row">
       <div class="cat-manage-hd">
-        <span class="cat-manage-ic" onclick="openIconPicker(${ci},event)" title="Click to change icon">${c.icon}</span>
+        <span class="cat-manage-ic" onclick="openIconPicker('cat',${ci},null,event)" title="Click to change icon" style="cursor:pointer;font-size:1.2rem">${renderIcon(c.icon)}</span>
         <span class="cat-manage-nm">${c.name}</span>
         <button class="del-btn" onclick="delCat(${ci})">✕</button>
       </div>
       <div class="cat-manage-body">
-        ${c.subs.map((s,si)=>`<span class="sub-tag">${s} <button class="del-btn" onclick="delSub(${ci},${si})" style="font-size:.6rem">×</button></span>`).join('')}
+        ${c.subs.map((s,si)=>`<span class="sub-tag">
+          <span onclick="openIconPicker('sub',${ci},'${s.replace(/'/g,"\\'")}',event)" title="Change sub icon" style="cursor:pointer;min-width:16px;display:inline-block;text-align:center">${renderIcon(getSubIcon(c.name,s))}</span>
+          ${s}
+          <button class="del-btn" onclick="delSub(${ci},${si})" style="font-size:.6rem">×</button>
+        </span>`).join('')}
         <input type="text" class="fi" id="sub-in-${ci}" placeholder="+ add sub" style="width:130px;padding:3px 8px;font-size:.7rem" onkeydown="if(event.key==='Enter')addSub(${ci})">
         <button class="abtn sm" onclick="addSub(${ci})">+</button>
       </div>
@@ -1370,7 +1602,25 @@ function renderManageCats(){
 }
 function renderManageStores(){
   document.getElementById('manage-stores').innerHTML=stores.map((s,i)=>`
-    <span class="sub-tag ${ONLINE_STORES.has(s)?'online-chip':''}">${s}${ONLINE_STORES.has(s)?' 📦':''} <button class="del-btn" onclick="delStore(${i})" style="font-size:.6rem">✕</button></span>`).join('');
+    <span class="sub-tag ${ONLINE_STORES.has(s)?'online-chip':''}">
+      ${s}${ONLINE_STORES.has(s)?' 📦':''}
+      <button class="del-btn" onclick="delStore(${i})" style="font-size:.6rem">✕</button>
+    </span>`).join('');
+}
+function renderManageNavIcons(){
+  const w=document.getElementById('manage-nav-icons');
+  if(!w)return;
+  const navPages=[
+    {id:'dashboard',label:'Dashboard'},{id:'expenses',label:'Expenses'},{id:'entry',label:'Add Entry'},
+    {id:'report',label:'Reports'},{id:'pivot',label:'Pivot'},{id:'txns',label:'Transactions'},
+    {id:'lookup',label:'Item Lookup'},{id:'manage',label:'Manage'},{id:'gist',label:'Sync'},
+    {id:'shopping',label:'Shopping'},{id:'pantry',label:'Pantry'},
+  ];
+  w.innerHTML=navPages.map(p=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
+    <span onclick="openIconPicker('nav',null,'${p.id}',event)" style="font-size:1.3rem;cursor:pointer;min-width:28px;text-align:center" title="Click to change">${renderIcon(navIcons[p.id]||DEFAULT_NAV_ICONS[p.id])}</span>
+    <span style="flex:1;font-size:.8rem;font-weight:600">${p.label}</span>
+    <button class="abtn sm" onclick="openIconPicker('nav',null,'${p.id}',event)">Change</button>
+  </div>`).join('');
 }
 function addCat(){
   const icon=document.getElementById('nc-icon').value.trim()||'📌';
@@ -1387,43 +1637,58 @@ function addStore(){const v=document.getElementById('ns-name').value.trim();if(!
 function delStore(i){stores.splice(i,1);sv(K.S,stores);renderManageStores();buildChips();}
 
 // ═══════════════════════════════════════════
-// ICON PICKER
+// ICON PICKER — unified for cat / sub / nav
 // ═══════════════════════════════════════════
-const ALL_ICONS=['🛒','🏠','💊','⚡','🚗','👤','🍕','🌿','🐟','🥛','🧹','👗','🎓','✈️','🎁','💻','📱','🏋️','🐄','🧴','🍎','🫙','☕','🎂','🏥','⛽','💈','🥩','🥦','🧅','🍌','🥥','🌶️','🧂','🍜','🥚','🍞','🎵','🏦','💰','📚','🎮','🛁','🪴','🔧','🚿','🎉','🕯️','⛪','🚌','🏍️','🅿️','🛵','🚲','💄','🧣','👒','🩺','💉','🩹','🏡','💡','📺','🧊','🪣','🫧','🧽','🪥','🪒','🫀','🌸','🌻','🍃','🌊','☀️','🌙','⭐','🔥','💧','❄️','🎯','🎪','🏖️','⛰️','🏔️'];
-let ipCatIdx=null;
+const ALL_ICONS=['🛒','🏠','💊','⚡','🚗','👤','🍕','🌿','🐟','🥛','🧹','👗','🎓','✈️','🎁','💻','📱','🏋️','🐄','🧴','🍎','🫙','☕','🎂','🏥','⛽','💈','🥩','🥦','🧅','🍌','🥥','🌶️','🧂','🍜','🥚','🍞','🎵','🏦','💰','📚','🎮','🛁','🪴','🔧','🚿','🎉','🕯️','⛪','🚌','🏍️','🅿️','🛵','🚲','💄','🧣','👒','🩺','💉','🩹','🏡','💡','📺','🧊','🪣','🫧','🧽','🪥','🪒','🫀','🌸','🌻','🍃','🌊','☀️','🌙','⭐','🔥','💧','❄️','🎯','🎪','🏖️','⛰️','🏔️','🥗','🫒','🧈','🥜','🍳','🥘','🫕','🧆','🌮','🍱','🥡','🧃','🍵','🧋','🥤','💐','🪷','🌺','🎀','🎊','🎈','🏅','🥇','💎','🔑','🏷️','📦','🗂️','📊','📈','⚙️','🔩','🪛','🔒','💬','📞','🖥️'];
 
-function openIconPicker(ci,event){
-  ipCatIdx=ci;
+// ipCtx = {type:'cat'|'sub'|'nav', catIdx, subName, navId}
+let ipCtx=null;
+
+function openIconPicker(type,catIdx,extra,event){
+  // Stop propagation so the doc click listener doesn't immediately close it
+  event.stopPropagation();
+  ipCtx={type,catIdx,extra};
   const picker=document.getElementById('icon-picker');
   picker.style.display='block';
+  // Position near click
   const rect=event.target.getBoundingClientRect();
-  picker.style.left=(rect.left)+'px';
-  picker.style.top=(rect.bottom+6)+'px';
+  const pickerW=288;
+  let left=rect.left;
+  if(left+pickerW>window.innerWidth-8) left=window.innerWidth-pickerW-8;
+  picker.style.left=Math.max(4,left)+'px';
+  picker.style.top=(rect.bottom+6+window.scrollY)+'px';
+  // Reset to emoji tab
+  switchIpTab('emoji');
   document.getElementById('ip-q').value='';
+  document.getElementById('ip-url').value='';
+  document.getElementById('ip-url-preview').innerHTML='?';
   filterIcons();
-  setTimeout(()=>document.addEventListener('click',closePickerOutside),0);
+  // Remove any old listener first, then add fresh
+  document.removeEventListener('click',closePickerOutside);
+  setTimeout(()=>document.addEventListener('click',closePickerOutside),10);
 }
-function closePickerOutside(e){if(!document.getElementById('icon-picker').contains(e)){document.getElementById('icon-picker').style.display='none';ipCatIdx=null;document.removeEventListener('click',closePickerOutside);}}
+function closePickerOutside(e){
+  const picker=document.getElementById('icon-picker');
+  if(picker&&!picker.contains(e.target)){
+    picker.style.display='none';
+    ipCtx=null;
+    document.removeEventListener('click',closePickerOutside);
+  }
+}
 function filterIcons(){
   const q=document.getElementById('ip-q').value.toLowerCase();
   const grid=document.getElementById('ip-grid');
-  const cur=ipCatIdx!==null?cats[ipCatIdx].icon:'';
-  // Filter by text in emoji name if searchable, else show all
-  const filtered=q?ALL_ICONS.filter(ic=>ic.toLowerCase().includes(q)):ALL_ICONS;
-  grid.innerHTML=(filtered.length?filtered:ALL_ICONS).map(ic=>`<div class="ip-ic${ic===cur?' sel':''}" onclick="selectIcon('${ic}')" title="${ic}">${ic}</div>`).join('');
+  // current icon for highlight
+  let cur='';
+  if(ipCtx){
+    if(ipCtx.type==='cat'&&ipCtx.catIdx!==null) cur=cats[ipCtx.catIdx]?.icon||'';
+    else if(ipCtx.type==='sub') cur=getSubIcon(cats[ipCtx.catIdx]?.name,ipCtx.extra);
+    else if(ipCtx.type==='nav') cur=navIcons[ipCtx.extra]||DEFAULT_NAV_ICONS[ipCtx.extra]||'';
+  }
+  const list=q?ALL_ICONS.filter(ic=>ic.includes(q)):ALL_ICONS;
+  grid.innerHTML=list.map(ic=>`<div class="ip-ic${ic===cur?' sel':''}" onclick="selectIcon('${ic}')" title="${ic}">${ic}</div>`).join('');
 }
-function selectIcon(ic){
-  if(ipCatIdx===null)return;
-  applyIconToCategory(ic);
-}
-function applyIconToCategory(ic){
-  if(ipCatIdx===null)return;
-  cats[ipCatIdx].icon=ic;sv(K.C,cats);
-  document.getElementById('icon-picker').style.display='none';
-  ipCatIdx=null;
-  renderManageCats();buildChips();
-  document.removeEventListener('click',closePickerOutside);
-}
+function selectIcon(ic){applyIcon(ic);}
 function switchIpTab(tab){
   document.getElementById('ip-tab-emoji').className='ip-tab'+(tab==='emoji'?' on':'');
   document.getElementById('ip-tab-url').className='ip-tab'+(tab==='url'?' on':'');
@@ -1434,20 +1699,33 @@ function previewIconUrl(){
   const url=document.getElementById('ip-url').value.trim();
   const prev=document.getElementById('ip-url-preview');
   if(!url){prev.innerHTML='?';return;}
-  // Check if it's a URL
-  if(url.startsWith('http')){
-    prev.innerHTML=`<img src="${url}" onerror="this.parentElement.textContent='❌'">`;
-  } else {
-    // treat as emoji/text
-    prev.textContent=url.slice(0,2);
-  }
+  if(url.startsWith('http')){prev.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:contain" onerror="this.parentElement.textContent='❌'">`;}
+  else{prev.textContent=url.slice(0,2);}
 }
 function applyIconUrl(){
   const url=document.getElementById('ip-url').value.trim();
   if(!url)return toast('Enter a URL or emoji','tr');
-  // If it's an img URL, store as <img> marker
   const ic=url.startsWith('http')?`__img__${url}`:url.slice(0,2);
-  applyIconToCategory(ic);
+  applyIcon(ic);
+}
+function applyIcon(ic){
+  if(!ipCtx)return;
+  const {type,catIdx,extra}=ipCtx;
+  if(type==='cat'){
+    cats[catIdx].icon=ic;sv(K.C,cats);
+    renderManageCats();buildChips();renderSidebar();
+  } else if(type==='sub'){
+    const catName=cats[catIdx]?.name;
+    if(catName) setSubIcon(catName,extra,ic);
+    renderManageCats();
+  } else if(type==='nav'){
+    navIcons[extra]=ic;sv('kh3_navicons',navIcons);
+    renderSidebar();renderManageNavIcons();
+  }
+  // Close picker
+  document.getElementById('icon-picker').style.display='none';
+  ipCtx=null;
+  document.removeEventListener('click',closePickerOutside);
 }
 
 // ═══════════════════════════════════════════
@@ -1477,7 +1755,7 @@ async function gistPush(){
   if(!token){gistLog('❌ No token set');return toast('Set your GitHub token','tr');}
   const dot=document.getElementById('gist-dot-top');dot.className='gist-dot syncing';
   gistLog('⬆ Pushing data…');
-  const payload={entries,cats,stores,shopList,pantry,pushedAt:new Date().toISOString()};
+  const payload={entries,cats,stores,shopList,pantry,navIcons,subIcons,pushedAt:new Date().toISOString()};
   const body={description:'Kharch Expense Data',public:false,files:{'kharch-data.json':{content:JSON.stringify(payload,null,2)}}};
   try{
     const url=gistCfg.id?`https://api.github.com/gists/${gistCfg.id}`:'https://api.github.com/gists';
@@ -1505,6 +1783,8 @@ async function gistPull(){
     if(payload.stores){stores=payload.stores;sv(K.S,stores);}
     if(payload.shopList){shopList=payload.shopList;sv(K.SL,shopList);}
     if(payload.pantry){pantry=payload.pantry;sv(K.PT,pantry);}
+    if(payload.navIcons){navIcons=payload.navIcons;sv('kh3_navicons',navIcons);}
+    if(payload.subIcons){subIcons=payload.subIcons;sv('kh3_subicons',subIcons);}
     sv('kh3_gist_last',Date.now());updateGistTop();
     gistLog('✅ Pulled! '+entries.length+' entries, pushed at: '+(payload.pushedAt||'?'));
     toast('Pulled from Gist ✓','tg');dot.className='gist-dot ok';
@@ -1736,7 +2016,7 @@ function toast(msg,cls=''){const el=document.getElementById('toast');el.textCont
 // INIT
 // ═══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',()=>{
-  renderDash();renderEntry();renderExpenses();updateGistTop();
+  renderSidebar();renderDash();renderEntry();renderExpenses();updateGistTop();
 });
 </script>
 </body>
