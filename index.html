@@ -485,7 +485,7 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
                 <input type="text" class="fi" id="e-item" placeholder="e.g. Milk, Petrol…" autocomplete="off" oninput="showSuggest();tryAutoCat()">
                 <div id="e-suggest" style="display:none;background:var(--card);border:1px solid var(--border2);border-radius:var(--rs);margin-top:3px;overflow:hidden;box-shadow:var(--sh2);position:relative;z-index:100"></div>
                 <div class="autocat-hint" id="autocat-hint" style="display:none" onclick="openAutoCatPopup()">
-                  <div class="dot"></div> Auto-category suggestion found — tap to apply
+                  <div class="dot"></div> History-based category suggestion — tap to apply
                 </div>
               </div>
             </div>
@@ -1458,13 +1458,28 @@ function renderEntry(){
 }
 function buildChips(){
   const cW=document.getElementById('e-cats');cW.innerHTML='';
-  cats.forEach((c,i)=>{const b=document.createElement('button');b.className='chip'+(selCat===i?' sc':'');b.innerHTML=renderIcon(c.icon)+' '+c.name;b.onclick=()=>{selCat=i;selSub=null;buildChips();};cW.appendChild(b);});
+  // Only show categories that appear in history
+  const usedCatNames=[...new Set(entries.map(e=>e.category).filter(Boolean))];
+  const historyCats=cats.map((c,i)=>({c,i})).filter(({c})=>usedCatNames.includes(c.name));
+  if(historyCats.length===0){
+    cW.innerHTML='<div style="font-size:.72rem;color:var(--t3);padding:6px 0">No history yet — categories will appear after your first entry.</div>';
+  } else {
+    historyCats.forEach(({c,i})=>{const b=document.createElement('button');b.className='chip'+(selCat===i?' sc':'');b.innerHTML=renderIcon(c.icon)+' '+c.name;b.onclick=()=>{selCat=i;selSub=null;buildChips();};cW.appendChild(b);});
+  }
   const subSection=document.getElementById('e-sub-section');
   const sW=document.getElementById('e-subs');sW.innerHTML='';
   if(selCat===null){if(subSection)subSection.style.display='none';}
   else{
     if(subSection)subSection.style.display='';
-    cats[selCat].subs.forEach((s,i)=>{const b=document.createElement('button');b.className='chip'+(selSub===i?' ss':'');b.innerHTML=renderIcon(s.icon)+' '+s.name;b.onclick=()=>{selSub=i;buildChips();};sW.appendChild(b);});
+    // Only show subcategories used in history for this category
+    const catName=cats[selCat].name;
+    const usedSubNames=[...new Set(entries.filter(e=>e.category===catName).map(e=>e.subcat).filter(Boolean))];
+    const historySubs=cats[selCat].subs.map((s,i)=>({s,i})).filter(({s})=>usedSubNames.includes(s.name));
+    if(historySubs.length===0){
+      sW.innerHTML='<div style="font-size:.72rem;color:var(--t3);padding:6px 0">No sub-category history for this category yet.</div>';
+    } else {
+      historySubs.forEach(({s,i})=>{const b=document.createElement('button');b.className='chip'+(selSub===i?' ss':'');b.innerHTML=renderIcon(s.icon)+' '+s.name;b.onclick=()=>{selSub=i;buildChips();};sW.appendChild(b);});
+    }
   }
   const stW=document.getElementById('e-stores');stW.innerHTML='';
   stores.forEach((s,i)=>{const b=document.createElement('button');b.className='chip'+(selStore===i?' sst':'')+(s.online?' online-chip':'');b.innerHTML=renderIcon(s.icon)+' '+s.name;b.onclick=()=>{selStore=i;if(s.online)setMode('online');else setMode('offline');buildChips();};stW.appendChild(b);});
@@ -1548,7 +1563,7 @@ const STORE_CAT_MAP={
 let _autoCatSuggestions=[];
 let _selectedAutoCatIdx=0;
 
-function getAutoCatSuggestions(itemName,storeIdx){
+function getAutoCatSuggestions(itemName){
   const item=(itemName||'').toLowerCase().trim();
   const suggestions=[];
   const seen=new Set();
@@ -1585,20 +1600,6 @@ function getAutoCatSuggestions(itemName,storeIdx){
     }
   }
 
-  // 2. Keyword-based
-  if(item.length>=2){
-    for(const rule of KEYWORD_MAP){
-      const matched=rule.kw.some(k=>item.includes(k)||k.includes(item));
-      if(matched){addSug(rule.cat,rule.sub,'keyword match',80);if(suggestions.length>=4)break;}
-    }
-  }
-
-  // 3. Store-based
-  if(storeIdx!==null&&storeIdx!==undefined&&stores[storeIdx]){
-    const s=STORE_CAT_MAP[stores[storeIdx]];
-    if(s)addSug(s.cat,s.sub,'store: '+stores[storeIdx],60);
-  }
-
   return suggestions.sort((a,b)=>b.score-a.score).slice(0,4);
 }
 
@@ -1606,7 +1607,7 @@ function tryAutoCat(){
   const item=document.getElementById('e-item').value.trim();
   const hint=document.getElementById('autocat-hint');
   if(item.length<2){hint.style.display='none';_autoCatSuggestions=[];return;}
-  _autoCatSuggestions=getAutoCatSuggestions(item,selStore);
+  _autoCatSuggestions=getAutoCatSuggestions(item);
   if(_autoCatSuggestions.length>0){
     hint.style.display='flex';
   } else {
@@ -1616,7 +1617,7 @@ function tryAutoCat(){
 
 function openAutoCatPopup(){
   const item=document.getElementById('e-item').value.trim();
-  _autoCatSuggestions=getAutoCatSuggestions(item,selStore);
+  _autoCatSuggestions=getAutoCatSuggestions(item);
   if(!_autoCatSuggestions.length){toast('No suggestions found','tr');return;}
   _selectedAutoCatIdx=0;
   renderAutoCatPopup();
@@ -1625,10 +1626,10 @@ function openAutoCatPopup(){
 
 function renderAutoCatPopup(){
   const item=document.getElementById('e-item').value.trim();
-  document.getElementById('autocat-popup-sub').textContent='Suggestions for "'+item+'" based on keywords, history & store';
-  const sourceClass={history:'hist','similar items':'hist',keyword:'',store:'store'};
+  document.getElementById('autocat-popup-sub').textContent='Suggestions for "'+item+'" based on your purchase history';
+  const sourceClass={history:'hist','similar items':'hist'};
   document.getElementById('autocat-suggestions').innerHTML=_autoCatSuggestions.map((s,i)=>{
-    const srcKey=s.source.startsWith('history')||s.source.startsWith('similar')?'hist':s.source.startsWith('store')?'store':'';
+    const srcKey=s.source.startsWith('history')||s.source.startsWith('similar')?'hist':'';
     const catObj=cats[s.catIdx];
     const subObj=catObj&&s.sub?catObj.subs.find(x=>x.name===s.sub):null;
     return`<div class="autocat-row${i===_selectedAutoCatIdx?' sel':''}" onclick="selectAutoCatIdx(${i})">
