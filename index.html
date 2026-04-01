@@ -383,8 +383,7 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
       <div class="tb-badge" id="gist-topstatus" style="cursor:pointer" onclick="go('gist',document.querySelector('.nav:nth-child(11)'))">
         <span class="gist-dot" id="gist-dot-top"></span><span id="gist-top-lbl">Not synced</span>
       </div>
-      <button class="tb-btn" style="background:var(--green);display:flex;align-items:center;gap:5px" onclick="gistPush()" id="push-btn" title="Push data to Gist">⬆ Push</button>
-      <button class="tb-btn" style="background:var(--teal);display:flex;align-items:center;gap:5px" onclick="quickGistPull()" id="sync-btn" title="Pull latest data from Gist">⬇ Pull</button>
+      <button class="tb-btn" style="background:var(--teal);display:flex;align-items:center;gap:5px" onclick="quickGistPull()" id="sync-btn" title="Pull latest data from Gist">⬇ Sync</button>
       <button class="tb-btn" onclick="showExport()">↓ Export</button>
     </div>
   </div>
@@ -1459,27 +1458,23 @@ function renderEntry(){
 }
 function buildChips(){
   const cW=document.getElementById('e-cats');cW.innerHTML='';
-  // Only show categories that appear in history
-  const usedCatNames=[...new Set(entries.map(e=>e.category).filter(Boolean))];
-  const historyCats=cats.map((c,i)=>({c,i})).filter(({c})=>usedCatNames.includes(c.name));
-  if(historyCats.length===0){
-    cW.innerHTML='<div style="font-size:.72rem;color:var(--t3);padding:6px 0">No history yet — categories will appear after your first entry.</div>';
+  // Show all defined categories
+  if(cats.length===0){
+    cW.innerHTML='<div style="font-size:.72rem;color:var(--t3);padding:6px 0">No categories yet — add some in Manage.</div>';
   } else {
-    historyCats.forEach(({c,i})=>{const b=document.createElement('button');b.className='chip'+(selCat===i?' sc':'');b.innerHTML=renderIcon(c.icon)+' '+c.name;b.onclick=()=>{selCat=i;selSub=null;buildChips();};cW.appendChild(b);});
+    cats.forEach((c,i)=>{const b=document.createElement('button');b.className='chip'+(selCat===i?' sc':'');b.innerHTML=renderIcon(c.icon)+' '+c.name;b.onclick=()=>{selCat=i;selSub=null;buildChips();};cW.appendChild(b);});
   }
   const subSection=document.getElementById('e-sub-section');
   const sW=document.getElementById('e-subs');sW.innerHTML='';
   if(selCat===null){if(subSection)subSection.style.display='none';}
   else{
     if(subSection)subSection.style.display='';
-    // Only show subcategories used in history for this category
-    const catName=cats[selCat].name;
-    const usedSubNames=[...new Set(entries.filter(e=>e.category===catName).map(e=>e.subcat).filter(Boolean))];
-    const historySubs=cats[selCat].subs.map((s,i)=>({s,i})).filter(({s})=>usedSubNames.includes(s.name));
-    if(historySubs.length===0){
-      sW.innerHTML='<div style="font-size:.72rem;color:var(--t3);padding:6px 0">No sub-category history for this category yet.</div>';
+    // Show all defined subcategories for selected category
+    const allSubs=cats[selCat].subs.map((s,i)=>({s,i}));
+    if(allSubs.length===0){
+      sW.innerHTML='<div style="font-size:.72rem;color:var(--t3);padding:6px 0">No sub-categories defined for this category.</div>';
     } else {
-      historySubs.forEach(({s,i})=>{const b=document.createElement('button');b.className='chip'+(selSub===i?' ss':'');b.innerHTML=renderIcon(s.icon)+' '+s.name;b.onclick=()=>{selSub=i;buildChips();};sW.appendChild(b);});
+      allSubs.forEach(({s,i})=>{const b=document.createElement('button');b.className='chip'+(selSub===i?' ss':'');b.innerHTML=renderIcon(s.icon)+' '+s.name;b.onclick=()=>{selSub=i;buildChips();};sW.appendChild(b);});
     }
   }
   const stW=document.getElementById('e-stores');stW.innerHTML='';
