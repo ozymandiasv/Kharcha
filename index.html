@@ -383,7 +383,8 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
       <div class="tb-badge" id="gist-topstatus" style="cursor:pointer" onclick="go('gist',document.querySelector('.nav:nth-child(11)'))">
         <span class="gist-dot" id="gist-dot-top"></span><span id="gist-top-lbl">Not synced</span>
       </div>
-      <button class="tb-btn" style="background:var(--teal);display:flex;align-items:center;gap:5px" onclick="quickGistPull()" id="sync-btn" title="Pull latest data from Gist">⬇ Sync</button>
+      <button class="tb-btn" style="background:var(--green);display:flex;align-items:center;gap:5px" onclick="gistPush()" id="push-btn" title="Push data to Gist">⬆ Push</button>
+      <button class="tb-btn" style="background:var(--teal);display:flex;align-items:center;gap:5px" onclick="quickGistPull()" id="sync-btn" title="Pull latest data from Gist">⬇ Pull</button>
       <button class="tb-btn" onclick="showExport()">↓ Export</button>
     </div>
   </div>
