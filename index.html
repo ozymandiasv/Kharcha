@@ -41,7 +41,7 @@ body{display:flex;overflow:hidden}
 .nav:hover{background:var(--bg)}
 .nav.on{background:rgba(67,97,238,.09);color:var(--accent)}
 .nav-ic{width:28px;height:28px;border-radius:7px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:.82rem;flex-shrink:0;transition:all .15s}
-.nav.on .nav-ic{background:var(--accent);filter:brightness(10)}
+.nav.on .nav-ic{background:var(--accent);filter:none;box-shadow:0 2px 8px rgba(67,97,238,0.35)}
 .sb-foot{margin-top:auto;padding:14px;border-top:1px solid var(--border)}
 .import-btn{width:100%;padding:9px;border-radius:var(--rs);background:rgba(67,97,238,.07);border:1.5px dashed var(--accent);color:var(--accent);font-family:var(--font);font-size:.72rem;font-weight:700;cursor:pointer;transition:all .15s}
 .import-btn:hover{background:var(--accent);color:#fff}
@@ -383,6 +383,7 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
       <div class="tb-badge" id="gist-topstatus" style="cursor:pointer" onclick="go('gist',document.querySelector('.nav:nth-child(11)'))">
         <span class="gist-dot" id="gist-dot-top"></span><span id="gist-top-lbl">Not synced</span>
       </div>
+      <button class="tb-btn" style="background:var(--teal);display:flex;align-items:center;gap:5px" onclick="quickGistPull()" id="sync-btn" title="Pull latest data from Gist">⬇ Sync</button>
       <button class="tb-btn" onclick="showExport()">↓ Export</button>
     </div>
   </div>
@@ -471,22 +472,26 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
       <div class="entry-main-grid">
         <!-- LEFT COLUMN: form sections -->
         <div>
-          <!-- Section 1: Basic Info -->
+          <!-- Section 1: Date + Item + Brand -->
           <div class="entry-section">
             <div class="entry-section-title"><span>1️⃣</span> Basic Info</div>
-            <div class="entry-two-col">
+            <div style="display:grid;grid-template-columns:140px 1fr;gap:10px;margin-bottom:10px">
               <div class="form-f" style="margin-bottom:0">
                 <label>Date</label>
-                <input type="date" class="fi" id="e-date">
+                <input type="date" class="fi" id="e-date" style="font-size:.75rem;padding:7px 9px">
               </div>
               <div class="form-f" style="margin-bottom:0">
-                <label>Item / Description</label>
+                <label>Item <span style="color:var(--red)">*</span></label>
                 <input type="text" class="fi" id="e-item" placeholder="e.g. Milk, Petrol…" autocomplete="off" oninput="showSuggest();tryAutoCat()">
                 <div id="e-suggest" style="display:none;background:var(--card);border:1px solid var(--border2);border-radius:var(--rs);margin-top:3px;overflow:hidden;box-shadow:var(--sh2);position:relative;z-index:100"></div>
                 <div class="autocat-hint" id="autocat-hint" style="display:none" onclick="openAutoCatPopup()">
                   <div class="dot"></div> Auto-category suggestion found — tap to apply
                 </div>
               </div>
+            </div>
+            <div class="form-f" style="margin-bottom:0">
+              <label>Brand <span style="color:var(--t3);font-weight:500;text-transform:none;letter-spacing:0;font-size:.6rem">(optional)</span></label>
+              <input type="text" class="fi" id="e-brand" placeholder="e.g. Amul, Tata, Local…" autocomplete="off">
             </div>
           </div>
 
@@ -495,7 +500,7 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
             <div class="entry-section-title"><span>2️⃣</span> Amount &amp; Quantity</div>
             <div class="entry-three-col">
               <div class="form-f" style="margin-bottom:0">
-                <label>Amount (₹)</label>
+                <label>Amount (₹) <span style="color:var(--red)">*</span></label>
                 <div class="amt-w"><input type="number" class="fi" id="e-amt" placeholder="0.00" oninput="calcUnit()"></div>
               </div>
               <div class="form-f" style="margin-bottom:0">
@@ -506,7 +511,7 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
                 <label>Unit</label>
                 <select class="fi" id="e-unit" onchange="calcUnit()">
                   <option value="">—</option>
-                  <option>kgs</option><option>gms</option><option>ltr</option><option>ml</option>
+                  <option>kg</option><option>ltr</option>
                   <option>nos</option><option>pkt</option><option>dozen</option><option>bunch</option>
                 </select>
               </div>
@@ -514,40 +519,44 @@ select.fsel:focus,input.fsel:focus{border-color:var(--accent)}
             <div class="unit-hint" id="unit-hint" style="margin-top:6px"></div>
           </div>
 
-          <!-- Section 3: Category -->
+          <!-- Section 3: Category (mandatory) -->
           <div class="entry-section">
-            <div class="entry-section-title"><span>3️⃣</span> Category &amp; Sub-category</div>
-            <div class="form-f">
-              <label>Category</label>
+            <div class="entry-section-title"><span>3️⃣</span> Category <span style="color:var(--red);margin-left:3px">*</span></div>
+            <div class="form-f" style="margin-bottom:0">
               <div class="chip-grid" id="e-cats"></div>
             </div>
+          </div>
+
+          <!-- Section 4: Sub-category (shown only after category selected) -->
+          <div class="entry-section" id="e-sub-section" style="display:none">
+            <div class="entry-section-title"><span>4️⃣</span> Sub-category <span style="color:var(--red);margin-left:3px">*</span></div>
             <div class="form-f" style="margin-bottom:0">
-              <label>Sub-category</label>
-              <div class="chip-grid" id="e-subs"><span style="font-size:.7rem;color:var(--t3);font-style:italic">Select a category first</span></div>
+              <div class="chip-grid" id="e-subs"></div>
             </div>
           </div>
 
-          <!-- Section 4: Store & Mode -->
+          <!-- Section 5: Store (mandatory) -->
           <div class="entry-section">
-            <div class="entry-section-title"><span>4️⃣</span> Store &amp; Mode</div>
-            <div class="form-f">
-              <label>Store</label>
+            <div class="entry-section-title"><span>5️⃣</span> Store <span style="color:var(--red);margin-left:3px">*</span></div>
+            <div class="form-f" style="margin-bottom:0">
               <div class="chip-grid" id="e-stores"></div>
             </div>
-            <div class="form-f" style="margin-bottom:0">
-              <label>Purchase Mode <span id="online-indicator" style="font-size:.65rem;color:var(--teal);font-weight:700;margin-left:6px"></span></label>
-              <div style="display:flex;gap:8px">
-                <button class="chip" id="mode-offline" onclick="setMode('offline')">🏪 Offline</button>
-                <button class="chip" id="mode-online" onclick="setMode('online')">📦 Online</button>
-              </div>
+          </div>
+
+          <!-- Section 6: Online / Offline (mandatory) -->
+          <div class="entry-section">
+            <div class="entry-section-title"><span>6️⃣</span> Purchase Mode <span style="color:var(--red);margin-left:3px">*</span> <span id="online-indicator" style="font-size:.65rem;color:var(--teal);font-weight:700;margin-left:6px"></span></div>
+            <div style="display:flex;gap:8px">
+              <button class="chip" id="mode-offline" onclick="setMode('offline')">🏪 Offline</button>
+              <button class="chip" id="mode-online" onclick="setMode('online')">📦 Online</button>
             </div>
           </div>
 
-          <!-- Section 5: Note & Save -->
+          <!-- Section 7: Note & Save -->
           <div class="entry-section">
-            <div class="entry-section-title"><span>5️⃣</span> Note &amp; Save</div>
+            <div class="entry-section-title"><span>7️⃣</span> Notes &amp; Save</div>
             <div class="form-f">
-              <label>Note (optional)</label>
+              <label>Notes <span style="color:var(--t3);font-weight:500;text-transform:none;letter-spacing:0;font-size:.6rem">(optional)</span></label>
               <textarea class="fi" id="e-note" style="resize:vertical;min-height:46px" placeholder="Any extra detail…"></textarea>
             </div>
             <div style="display:flex;gap:8px">
@@ -1444,14 +1453,19 @@ let selCat=null,selSub=null,selStore=null,selMode='offline';
 
 function renderEntry(){
   document.getElementById('e-date').value=new Date().toISOString().slice(0,10);
+  selCat=null;selSub=null;selStore=null;selMode='offline';
   buildChips();renderLog();
 }
 function buildChips(){
   const cW=document.getElementById('e-cats');cW.innerHTML='';
-  cats.forEach((c,i)=>{const b=document.createElement('button');b.className='chip'+(selCat===i?' sc':'');b.textContent=c.icon+' '+c.name;b.onclick=()=>{selCat=i;selSub=null;buildChips();};cW.appendChild(b);});
+  cats.forEach((c,i)=>{const b=document.createElement('button');b.className='chip'+(selCat===i?' sc':'');b.innerHTML=renderIcon(c.icon)+' '+c.name;b.onclick=()=>{selCat=i;selSub=null;buildChips();};cW.appendChild(b);});
+  const subSection=document.getElementById('e-sub-section');
   const sW=document.getElementById('e-subs');sW.innerHTML='';
-  if(selCat===null){sW.innerHTML='<span style="font-size:.7rem;color:var(--t3);font-style:italic">Select a category first</span>';return;}
-  cats[selCat].subs.forEach((s,i)=>{const b=document.createElement('button');b.className='chip'+(selSub===i?' ss':'');b.innerHTML=renderIcon(s.icon)+' '+s.name;b.onclick=()=>{selSub=i;buildChips();};sW.appendChild(b);});
+  if(selCat===null){if(subSection)subSection.style.display='none';}
+  else{
+    if(subSection)subSection.style.display='';
+    cats[selCat].subs.forEach((s,i)=>{const b=document.createElement('button');b.className='chip'+(selSub===i?' ss':'');b.innerHTML=renderIcon(s.icon)+' '+s.name;b.onclick=()=>{selSub=i;buildChips();};sW.appendChild(b);});
+  }
   const stW=document.getElementById('e-stores');stW.innerHTML='';
   stores.forEach((s,i)=>{const b=document.createElement('button');b.className='chip'+(selStore===i?' sst':'')+(s.online?' online-chip':'');b.innerHTML=renderIcon(s.icon)+' '+s.name;b.onclick=()=>{selStore=i;if(s.online)setMode('online');else setMode('offline');buildChips();};stW.appendChild(b);});
   const moOff=document.getElementById('mode-offline');moOff.innerHTML=renderIcon(modeIcons.offline)+' Offline';moOff.className='chip'+(selMode==='offline'?' sc':'');
@@ -1646,19 +1660,27 @@ function applyAutoCat(){
 function closeAutoCatPopup(){
   document.getElementById('autocat-popup').classList.remove('open');
 }
-function saveEntry(){
-  const amt=parseFloat(document.getElementById('e-amt').value);
-  const item=document.getElementById('e-item').value.trim();
-  if(!amt||amt<=0)return toast('Enter a valid amount','tr');
-  if(!item)return toast('Enter item name','tr');
-  if(selCat===null)return toast('Select a category','tr');
-  const store=selStore!==null?stores[selStore]:'';
-  const e={id:Date.now()+'_'+Math.random().toString(36).slice(2,5),date:document.getElementById('e-date').value,amount:amt,item,category:cats[selCat].name,subcat:selSub!==null?cats[selCat].subs[selSub].name:'',store:store?store.name:'',online:selMode==='online'||storeIsOnline(store?store.name:''),qty:document.getElementById('e-qty').value||'',unit:document.getElementById('e-unit').value||'',note:document.getElementById('e-note').value.trim()||''};
-  entries.unshift(e);sv(K.E,entries);
-  ['e-amt','e-item','e-note','e-qty'].forEach(id=>document.getElementById(id).value='');
+function resetEntryForm(){
+  ['e-amt','e-item','e-brand','e-note','e-qty'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('e-unit').value='';
   document.getElementById('unit-hint').textContent='';
   document.getElementById('e-suggest').style.display='none';
+  const ah=document.getElementById('autocat-hint');if(ah)ah.style.display='none';
+  selCat=null;selSub=null;selStore=null;selMode='offline';
+  buildChips();
+}
+function saveEntry(){
+  const item=document.getElementById('e-item').value.trim();
+  const amt=parseFloat(document.getElementById('e-amt').value);
+  if(!item)return toast('Item is required','tr');
+  if(!amt||amt<=0)return toast('Enter a valid amount','tr');
+  if(selCat===null)return toast('Select a category','tr');
+  if(selSub===null)return toast('Select a sub-category','tr');
+  if(selStore===null)return toast('Select a store','tr');
+  const store=stores[selStore];
+  const e={id:Date.now()+'_'+Math.random().toString(36).slice(2,5),date:document.getElementById('e-date').value,amount:amt,item,brand:document.getElementById('e-brand').value.trim()||'',category:cats[selCat].name,subcat:cats[selCat].subs[selSub].name,store:store?store.name:'',online:selMode==='online'||storeIsOnline(store?store.name:''),qty:document.getElementById('e-qty').value||'',unit:document.getElementById('e-unit').value||'',note:document.getElementById('e-note').value.trim()||''};
+  entries.unshift(e);sv(K.E,entries);
+  resetEntryForm();
   renderLog();toast('Entry saved ✓','tg');
 }
 function renderLog(){
@@ -1669,27 +1691,25 @@ function renderLog(){
   if(!es.length){w.innerHTML='<div style="padding:14px;text-align:center;font-size:.73rem;color:var(--t3)">No entries for this date</div>';document.getElementById('log-tot').textContent='₹0';return;}
   w.innerHTML=es.map(e=>`<div class="log-item">
     <div class="log-ic">${catIcon(e.category)}</div>
-    <div><div class="log-nm">${e.item}${e.qty?' · '+e.qty+(e.unit||''):''}</div><div class="log-mt">${e.category}${e.subcat?' / '+e.subcat:''} ${e.online?'· '+renderIcon(modeIcons.online):''}</div></div>
+    <div><div class="log-nm">${e.item}${e.brand?' <span style="color:var(--t3);font-weight:500;font-size:.68rem">('+e.brand+')</span>':''}${e.qty?' · '+e.qty+(e.unit||''):''}</div><div class="log-mt">${e.category}${e.subcat?' / '+e.subcat:''} ${e.online?'· '+renderIcon(modeIcons.online):''}</div></div>
     <div class="log-amt">${fmtF(e.amount)}</div>
     <button class="del-btn" onclick="delEntry('${e.id}')">✕</button>
   </div>`).join('');
   document.getElementById('log-tot').textContent=fmtF(es.reduce((s,e)=>s+e.amount,0));
 }
 function saveEntryAndAddToPantry(){
-  // Save the entry normally, then also add to pantry
-  const amt=parseFloat(document.getElementById('e-amt').value);
   const item=document.getElementById('e-item').value.trim();
+  const amt=parseFloat(document.getElementById('e-amt').value);
+  if(!item)return toast('Item is required','tr');
   if(!amt||amt<=0)return toast('Enter a valid amount','tr');
-  if(!item)return toast('Enter item name','tr');
   if(selCat===null)return toast('Select a category','tr');
-  const store=selStore!==null?stores[selStore]:'';
-  const e={id:Date.now()+'_'+Math.random().toString(36).slice(2,5),date:document.getElementById('e-date').value,amount:amt,item,category:cats[selCat].name,subcat:selSub!==null?cats[selCat].subs[selSub].name:'',store:store?store.name:'',online:selMode==='online'||storeIsOnline(store?store.name:''),qty:document.getElementById('e-qty').value||'',unit:document.getElementById('e-unit').value||'',note:document.getElementById('e-note').value.trim()||''};
+  if(selSub===null)return toast('Select a sub-category','tr');
+  if(selStore===null)return toast('Select a store','tr');
+  const store=stores[selStore];
+  const e={id:Date.now()+'_'+Math.random().toString(36).slice(2,5),date:document.getElementById('e-date').value,amount:amt,item,brand:document.getElementById('e-brand').value.trim()||'',category:cats[selCat].name,subcat:cats[selCat].subs[selSub].name,store:store?store.name:'',online:selMode==='online'||storeIsOnline(store?store.name:''),qty:document.getElementById('e-qty').value||'',unit:document.getElementById('e-unit').value||'',note:document.getElementById('e-note').value.trim()||''};
   entries.unshift(e);sv(K.E,entries);
-  // Add to pantry
   addToPantryDirect({item,qty:e.qty,unit:e.unit,category:cats[selCat].name});
-  ['e-amt','e-item','e-note','e-qty'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('e-unit').value='';document.getElementById('unit-hint').textContent='';
-  document.getElementById('e-suggest').style.display='none';
+  resetEntryForm();
   renderLog();toast('Saved + added to pantry ✓','tg');
 }
 function delEntry(id){entries=entries.filter(e=>e.id!=id);sv(K.E,entries);renderLog();toast('Deleted');}
@@ -1727,7 +1747,7 @@ function buildEditChips(){
   // categories
   const cW=document.getElementById('edit-cats');
   cW.innerHTML='';
-  cats.forEach((c,i)=>{const b=document.createElement('button');b.className='chip'+(editCat===i?' sc':'');b.textContent=c.icon+' '+c.name;b.onclick=()=>{editCat=i;editSub=null;buildEditChips();};cW.appendChild(b);});
+  cats.forEach((c,i)=>{const b=document.createElement('button');b.className='chip'+(editCat===i?' sc':'');b.innerHTML=renderIcon(c.icon)+' '+c.name;b.onclick=()=>{editCat=i;editSub=null;buildEditChips();};cW.appendChild(b);});
   // subcats
   const sW=document.getElementById('edit-subs');
   sW.innerHTML='';
@@ -2011,7 +2031,7 @@ function renderManageCats(){
 function renderManageStores(){
   document.getElementById('manage-stores').innerHTML=stores.map((s,i)=>`
     <span class="sub-tag ${s.online?'online-chip':''}">
-      <span onclick="openIconPicker('store',i,${i},event)" title="Change icon" style="cursor:pointer">${renderIcon(s.icon)}</span>
+      <span onclick="openIconPicker('store',${i},${i},event)" title="Change icon" style="cursor:pointer">${renderIcon(s.icon)}</span>
       ${s.name}
       ${s.online?'<span style="font-size:.55rem;color:var(--teal)">online</span>':''}
       <button class="del-btn" onclick="delStore(${i})" style="font-size:.6rem">✕</button>
@@ -2206,9 +2226,10 @@ async function gistPull(){
 function exportJSON(){const b={version:4,exported:new Date().toISOString(),entries,cats,stores,shopList,pantry,modeIcons};dl('kharch-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(b,null,2),'application/json');toast('Exported','tg');}
 function exportCSV(){
   if(!entries.length)return toast('No entries','tr');
-  const h=['date','amount','item','category','subcat','store','online','qty','unit','note'];
-  const rows=entries.map(e=>h.map(k=>{const v=String(e[k]??'');return v.includes(',')?`"${v}"`:v;}).join(','));
-  dl('kharch-'+new Date().toISOString().slice(0,10)+'.csv',[h.join(','),...rows].join('\n'),'text/csv');
+  const h=['date','item','brand','amount','category','subcat','store','online','qty','unit','note'];
+  const esc=v=>{const s=String(v??'');return(s.includes(',')||s.includes('"')||s.includes('\n'))?'"'+s.replace(/"/g,'""')+'"':s;};
+  const rows=entries.map(e=>h.map(k=>esc(k==='online'?(e[k]?'Online':'Offline'):e[k])).join(','));
+  dl('kharch-'+new Date().toISOString().slice(0,10)+'.csv',[h.join(','),...rows].join('\r\n'),'text/csv');
   toast('CSV exported','tg');
 }
 function handleImport(input){
@@ -2220,6 +2241,31 @@ function handleImport(input){
 function dl(name,content,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();}
 function showExport(){document.getElementById('exp-overlay').classList.add('open');}
 function closeExport(){document.getElementById('exp-overlay').classList.remove('open');}
+async function quickGistPull(){
+  const token=gistCfg.token,id=gistCfg.id;
+  if(!token||!id){toast('Set Gist token & ID in Sync settings','tr');go('gist',document.querySelectorAll('.nav')[8]);return;}
+  const btn=document.getElementById('sync-btn');
+  btn.textContent='⟳ Syncing…';btn.disabled=true;
+  const dot=document.getElementById('gist-dot-top');dot.className='gist-dot syncing';
+  try{
+    const res=await fetch(`https://api.github.com/gists/${id}`,{headers:{'Authorization':'token '+token}});
+    const data=await res.json();
+    const fileContent=data.files?.['kharch-data.json']?.content;
+    if(!fileContent){toast('File not found in Gist','tr');dot.className='gist-dot err';return;}
+    const payload=JSON.parse(fileContent);
+    if(payload.entries){entries=payload.entries;sv(K.E,entries);}
+    if(payload.cats){cats=migrateSubs(payload.cats)||cats;sv(K.C,cats);}
+    if(payload.stores){stores=migrateStores(payload.stores)||stores;sv(K.S,stores);}
+    if(payload.shopList){shopList=payload.shopList;sv(K.SL,shopList);}
+    if(payload.pantry){pantry=payload.pantry;sv(K.PT,pantry);}
+    if(payload.modeIcons){modeIcons=payload.modeIcons;sv('kh3_mode_icons',modeIcons);}
+    sv('kh3_gist_last',Date.now());updateGistTop();
+    renderDash();
+    if(document.getElementById('page-entry').classList.contains('on'))buildChips();
+    toast('Synced ✓ — '+entries.length+' entries','tg');
+  }catch(e){toast('Sync failed: '+e.message,'tr');dot.className='gist-dot err';}
+  finally{btn.textContent='⬇ Sync';btn.disabled=false;}
+}
 function confirmClear(){document.getElementById('c-title').textContent='Clear all entries?';document.getElementById('c-msg').textContent='This will delete all '+entries.length+' entries permanently.';document.getElementById('c-ok').onclick=()=>{entries=[];sv(K.E,entries);closeConfirm();renderManage();renderDash();toast('Cleared');};document.getElementById('confirm-overlay').classList.add('open');}
 function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('open');}
 
